@@ -3,22 +3,23 @@ package com.pozdeev.HelloWorld.dao;
 import com.pozdeev.HelloWorld.models.Person;
 import org.springframework.stereotype.Component;
 
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class PersonDAO {
 
-    private static int PE0PLE_COUNT;
+    private static int PEOPLE_COUNT;
     private List<Person> people;
 
     {
         people = new ArrayList<>();
 
-        people.add(new Person(++PE0PLE_COUNT, "Tom"));
-        people.add(new Person(++PE0PLE_COUNT, "Lich"));
-        people.add(new Person(++PE0PLE_COUNT, "Mike"));
-        people.add(new Person(++PE0PLE_COUNT, "Serg"));
+        people.add(new Person(++PEOPLE_COUNT, "Tom"));
+        people.add(new Person(++PEOPLE_COUNT, "Bob"));
+        people.add(new Person(++PEOPLE_COUNT, "Mike"));
+        people.add(new Person(++PEOPLE_COUNT, "Katy"));
     }
 
     public List<Person> index() {
@@ -26,7 +27,20 @@ public class PersonDAO {
     }
 
     public Person show(int id) {
-        if(id<0 | id>= people.size()) return null;
-        return people.get(id);
+        return people.stream().filter(person -> person.getId() == id).findAny().orElse(null);
+    }
+
+    public void save(Person person) {
+        person.setId(++PEOPLE_COUNT);
+        people.add(person);
+    }
+
+    public void update(int id, Person person) {
+        Person tobeUpdated = show(id);
+        tobeUpdated.setName(person.getName());
+    }
+
+    public void delete(int id) {
+        people.removeIf(p -> p.getId() == id);
     }
 }
