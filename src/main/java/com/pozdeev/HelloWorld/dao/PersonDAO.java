@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class PersonDAO {
+public class PersonDAO implements PersonDAOInterface {
 
     private static int PEOPLE_COUNT;
     private List<Person> people;
@@ -22,24 +22,29 @@ public class PersonDAO {
         people.add(new Person(++PEOPLE_COUNT, "Katy"));
     }
 
+    @Override
     public List<Person> index() {
         return people;
     }
 
+    @Override
     public Person show(int id) {
         return people.stream().filter(person -> person.getId() == id).findAny().orElse(null);
     }
 
+    @Override
     public void save(Person person) {
         person.setId(++PEOPLE_COUNT);
         people.add(person);
     }
 
+    @Override
     public void update(int id, Person person) {
         Person tobeUpdated = show(id);
         tobeUpdated.setName(person.getName());
     }
 
+    @Override
     public void delete(int id) {
         people.removeIf(p -> p.getId() == id);
     }
