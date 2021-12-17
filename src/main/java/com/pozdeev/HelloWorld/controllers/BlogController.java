@@ -72,7 +72,7 @@ public class BlogController {
     }
 
     @DeleteMapping("/states/{id}")
-    public String update(@PathVariable(name = "id", required = false) int id) {
+    public String delete(@PathVariable(name = "id", required = false) int id) {
         boolean del = repository.delete(id);
         if(del) {
             return String.format("State with id = %d deleted", id);
