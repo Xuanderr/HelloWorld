@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
+@Component("list")
 public class StateServiceListImpl implements StateService {
 
     private static int STATE_COUNT;
@@ -24,6 +24,11 @@ public class StateServiceListImpl implements StateService {
         states.add(new State(STATE_COUNT++,"Spring", "Java Framework",
                 "Very popular tool for Web application development"));
     }
+
+    private String getName() {
+        return "list";
+    }
+
     @Override
     public List<State> readAll() {
         return states;
@@ -32,7 +37,7 @@ public class StateServiceListImpl implements StateService {
     @Override
     public State read(int id) {
         for (State state: states) {
-            if (state.getId() == id) {
+            if (state.getState_id() == id) {
                 return state;
             }
         }
@@ -40,25 +45,29 @@ public class StateServiceListImpl implements StateService {
     }
 
     @Override
-    public void save(State state) {
-        state.setId(STATE_COUNT++);
+    public int save(State state) {
+        state.setState_id(STATE_COUNT++);
         states.add(state);
+        return 1;
     }
 
     @Override
-    public boolean update(int id, State state) {
+    public int update(int id, State state) {
         State forUp = read(id);
         if(forUp != null) {
             forUp.setTitle(state.getTitle());
-            forUp.setAnonse(state.getAnonse());
-            forUp.setFull(state.getFull());
-            return true;
+            forUp.setAnons(state.getAnons());
+            forUp.setFull_text(state.getFull_text());
+            return 1;
         }
-       return false;
+       return 0;
     }
 
     @Override
-    public boolean delete(int id) {
-        return states.removeIf(state -> state.getId() == id);
+    public int delete(int id) {
+        if (states.removeIf(state -> state.getState_id() == id)) {
+            return 1;
+        }
+        return 0;
     }
 }

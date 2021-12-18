@@ -3,33 +3,51 @@ package com.pozdeev.HelloWorld.controllers;
 
 import com.pozdeev.HelloWorld.services.StateService;
 import com.pozdeev.HelloWorld.models.State;
+import com.pozdeev.HelloWorld.services.StateServiceDatabaseImpl;
+import com.pozdeev.HelloWorld.services.StateServiceListImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
-
-// IF NOT STARTED GO TO StateServiceDatabaseImpl.java LINE 10
 
 @RestController
 public class BlogController {
 
-    private final StateService repository;
+    private StateService service;
 
     @Autowired
-    public BlogController(StateService repository) {
-        this.repository = repository;
+    @Qualifier("list")
+    public void setService(StateService service) {
+        this.service = service;
+    }
+
+    @GetMapping("/info")
+    public String getComponentName() {
+        String[] info = Arrays.toString(service.getClass().getAnnotations()).split("\\.");
+        String res = info[info.length-1];
+        return res.substring(0, res.length() - 1);
+    }
+
+    @GetMapping("/change")
+    public void change(@RequestParam(value = "type", required = false) String type) {
+        switch (type) {
+            case "list" -> setService(new StateServiceListImpl());
+            case "database" -> setService(new StateServiceDatabaseImpl());
+        }
     }
 
     @GetMapping("/states")
     public List<State> read() {
-        return repository.readAll();
+        return service.readAll();
     }
 
     @GetMapping("/states/{id}")
     public State read(@PathVariable(name = "id", required = false) int id) {
-        State state = repository.read(id);
-        if (state == null) {
+        State state = service.read(id);
+        if (state == null && getComponentName().endsWith("st\")") ) {
             return new State();
         }
         return state;
@@ -37,7 +55,7 @@ public class BlogController {
 
     @PostMapping(path = "/states" , consumes = MediaType.APPLICATION_JSON_VALUE)
     public State create(@RequestBody State newState) {
-        repository.save(newState);
+        service.save(newState);
         return newState;
     }
 
@@ -64,8 +82,8 @@ public class BlogController {
 
     @PutMapping(path = "/states/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public String update(@PathVariable(name = "id", required = false) int id, @RequestBody State newState) {
-        boolean upd = repository.update(id, newState);
-        if(upd) {
+        int upd = service.update(id, newState);
+        if(upd>0) {
             return String.format("State with id = %d updated", id);
         }
         return "Updating failed";
@@ -73,8 +91,8 @@ public class BlogController {
 
     @DeleteMapping("/states/{id}")
     public String delete(@PathVariable(name = "id", required = false) int id) {
-        boolean del = repository.delete(id);
-        if(del) {
+        int del = service.delete(id);
+        if(del>0) {
             return String.format("State with id = %d deleted", id);
         }
         return "Deleting failed";

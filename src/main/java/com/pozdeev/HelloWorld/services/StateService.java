@@ -11,11 +11,11 @@ public interface StateService {
 
     State read(int id);
 
-    void save(State state);
+    int save(State state);
 
-    boolean update(int id, State state);
+    int update(int id, State state);
 
-    boolean delete(int id);
+    int delete(int id);
 
 
 }

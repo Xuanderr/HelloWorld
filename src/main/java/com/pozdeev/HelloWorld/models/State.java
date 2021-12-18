@@ -10,30 +10,30 @@ package com.pozdeev.HelloWorld.models;
 
 public class State {
 
-    private Integer id;
+    private Integer state_id;
 
     private String title;
 
-    private String anonse;
+    private String anons;
 
-    private String full;
+    private String full_text;
 
     public State() {  }
 
 
-    public State(Integer id, String title, String anonse, String full) {
-        this.id = id;
+    public State(Integer id, String title, String anons, String full) {
+        this.state_id = id;
         this.title = title;
-        this.anonse = anonse;
-        this.full = full;
+        this.anons = anons;
+        this.full_text = full;
     }
 
-    public Integer getId() {
-        return id;
+    public Integer getState_id() {
+        return state_id;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public void setState_id(Integer state_id) {
+        this.state_id = state_id;
     }
 
     public String getTitle() {
@@ -44,19 +44,19 @@ public class State {
         this.title = title;
     }
 
-    public String getAnonse() {
-        return anonse;
+    public String getAnons() {
+        return anons;
     }
 
-    public void setAnonse(String anonse) {
-        this.anonse = anonse;
+    public void setAnons(String anons) {
+        this.anons = anons;
     }
 
-    public String getFull() {
-        return full;
+    public String getFull_text() {
+        return full_text;
     }
 
-    public void setFull(String full) {
-        this.full = full;
+    public void setFull_text(String full_text) {
+        this.full_text = full_text;
     }
 }

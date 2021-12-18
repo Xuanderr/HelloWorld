@@ -7,14 +7,18 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component    // <-- COMMENT THIS
+@Component("database")
 public class StateServiceDatabaseImpl implements StateService{
 
-    private static String DB_DRIVER = "org.postgresql.Driver";
-    private static String DB_URL = "jdbc:postgresql://localhost:5432/HelloWorldDataBase";
-    private static String DB_USER = "postgres";
-    private static String DB_PASSWORD = "123";
+    private static final String DB_DRIVER = "org.postgresql.Driver";
+    private static final String DB_URL = "jdbc:postgresql://localhost:5432/HelloWorldDataBase";
+    private static final String DB_USER = "postgres";
+    private static final String DB_PASSWORD = "123";
 
+
+    private String getName() {
+        return "database";
+    }
 
     private Connection getDBConnection() throws SQLException {
         // Maybe need in future
@@ -23,8 +27,7 @@ public class StateServiceDatabaseImpl implements StateService{
         //} catch (ClassNotFoundException e) {
         //    System.out.println(e.getMessage());
         //}
-        Connection dbConnection = DriverManager.getConnection(DB_URL, DB_USER,DB_PASSWORD);
-        return dbConnection;
+        return DriverManager.getConnection(DB_URL, DB_USER,DB_PASSWORD);
     }
 
     @Override
@@ -33,7 +36,7 @@ public class StateServiceDatabaseImpl implements StateService{
         try( Connection dbConnection = getDBConnection();
              Statement statement = dbConnection.createStatement())
         {
-            String readAllSQL = "SELECT * from States";
+            String readAllSQL = "SELECT * FROM states ORDER BY state_id ASC ";
             ResultSet resultSet = statement.executeQuery(readAllSQL);
 
             // question about vision area?
@@ -42,8 +45,8 @@ public class StateServiceDatabaseImpl implements StateService{
             while (resultSet.next()) {
                 states.add(new State(resultSet.getInt("state_id"),
                         resultSet.getString("title"),
-                        resultSet.getString("anonse"),
-                        resultSet.getString("full")));
+                        resultSet.getString("anons"),
+                        resultSet.getString("full_text")));
             }
             return states;
         } catch (SQLException e) {
@@ -57,17 +60,17 @@ public class StateServiceDatabaseImpl implements StateService{
         try( Connection dbConnection = getDBConnection();
              Statement statement = dbConnection.createStatement())
         {
-            String readOneSQL = String.format("SELECT * FROM States WHERE state_id = %d", id);
+            String readOneSQL = String.format("SELECT * FROM states WHERE state_id = %d", id);
             ResultSet resultSet = statement.executeQuery(readOneSQL);
 
             // question about vision area?
             State state = new State();
 
             while (resultSet.next()) {
-                state.setId(resultSet.getInt("state_id"));
+                state.setState_id(resultSet.getInt("state_id"));
                 state.setTitle(resultSet.getString("title"));
-                state.setAnonse(resultSet.getString("anonse"));
-                state.setFull(resultSet.getString("full"));
+                state.setAnons(resultSet.getString("anons"));
+                state.setFull_text(resultSet.getString("full_text"));
             }
             return state;
         } catch (SQLException e) {
@@ -76,55 +79,53 @@ public class StateServiceDatabaseImpl implements StateService{
     }
 
     @Override
-    public void save(State state) {
+    public int save(State state) {
 
         try (Connection dbConnection = getDBConnection();
              Statement statement = dbConnection.createStatement()) {
-            String readOneSQL = String.format("INSERT INTO States (title, anonse, full) VALUES ('%s', %s, '%s')",
-                    state.getTitle(), state.getAnonse(), state.getFull());
+            String readOneSQL = String.format("INSERT INTO states (title, anons, full_text) VALUES ('%s', '%s', '%s')",
+                    state.getTitle(), state.getAnons(), state.getFull_text());
 
-            statement.execute(readOneSQL);
+            return statement.executeUpdate(readOneSQL);
 
         } catch (SQLException ex) {
             ex.printStackTrace();
+            return -1;
         }
     }
 
-
-
     @Override
-    public boolean update(int id, State state) {
+    public int update(int id, State state) {
 
         try (Connection dbConnection = getDBConnection();
              Statement statement = dbConnection.createStatement()) {
             String readOneSQL =
-                    String.format("UPDATE States SET title = '%s', anonse = '%s', full = '%s'  " +
+                    String.format("UPDATE states SET title = '%s', anons = '%s', full_text = '%s'  " +
                                     "WHERE state_id = %d",
-                    state.getTitle(), state.getAnonse(), state.getFull(), id);
+                    state.getTitle(), state.getAnons(), state.getFull_text(), id);
 
-            statement.execute(readOneSQL);
+            return statement.executeUpdate(readOneSQL);
 
-            return true;
         } catch (SQLException ex) {
             ex.printStackTrace();
-            return false;
+            return -1;
         }
     }
 
     @Override
-    public boolean delete(int id) {
+    public int delete(int id) {
 
         try (Connection dbConnection = getDBConnection();
              Statement statement = dbConnection.createStatement()) {
             String readOneSQL =
-                    String.format("DELETE FROM States WHERE state_id = %d", id);
+                    String.format("DELETE FROM states WHERE state_id = %d", id);
 
-            statement.execute(readOneSQL);
+            return statement.executeUpdate(readOneSQL);
 
-            return true;
         } catch (SQLException ex) {
             ex.printStackTrace();
-            return false;
+            return -1;
         }
     }
+
 }
