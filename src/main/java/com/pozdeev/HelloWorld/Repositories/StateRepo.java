@@ -1,11 +1,11 @@
-package com.pozdeev.HelloWorld.services;
+package com.pozdeev.HelloWorld.Repositories;
 
 import com.pozdeev.HelloWorld.models.State;
 //import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface StateService {
+public interface StateRepo {
 
     List<State> readAll();
 

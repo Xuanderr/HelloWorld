@@ -1,10 +1,10 @@
 package com.pozdeev.HelloWorld.controllers;
 
 
-import com.pozdeev.HelloWorld.services.StateService;
+import com.pozdeev.HelloWorld.Repositories.StateRepo;
+import com.pozdeev.HelloWorld.Repositories.StateRepoDatabaseImpl;
+import com.pozdeev.HelloWorld.Repositories.StateRepoListImpl;
 import com.pozdeev.HelloWorld.models.State;
-import com.pozdeev.HelloWorld.services.StateServiceDatabaseImpl;
-import com.pozdeev.HelloWorld.services.StateServiceListImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -16,17 +16,17 @@ import java.util.List;
 @RestController
 public class BlogController {
 
-    private StateService service;
+    private StateRepo repo;
 
     @Autowired
-    @Qualifier("list")
-    public void setService(StateService service) {
-        this.service = service;
+    @Qualifier("database")
+    public void setRepo(StateRepo repo) {
+        this.repo = repo;
     }
 
     @GetMapping("/info")
     public String getComponentName() {
-        String[] info = Arrays.toString(service.getClass().getAnnotations()).split("\\.");
+        String[] info = Arrays.toString(repo.getClass().getAnnotations()).split("\\.");
         String res = info[info.length-1];
         return res.substring(0, res.length() - 1);
     }
@@ -34,19 +34,19 @@ public class BlogController {
     @GetMapping("/change")
     public void change(@RequestParam(value = "type", required = false) String type) {
         switch (type) {
-            case "list" -> setService(new StateServiceListImpl());
-            case "database" -> setService(new StateServiceDatabaseImpl());
+            case "list" -> setRepo(new StateRepoListImpl());
+            case "database" -> setRepo(new StateRepoDatabaseImpl());
         }
     }
 
     @GetMapping("/states")
     public List<State> read() {
-        return service.readAll();
+        return repo.readAll();
     }
 
     @GetMapping("/states/{id}")
     public State read(@PathVariable(name = "id", required = false) int id) {
-        State state = service.read(id);
+        State state = repo.read(id);
         if (state == null && getComponentName().endsWith("st\")") ) {
             return new State();
         }
@@ -55,7 +55,7 @@ public class BlogController {
 
     @PostMapping(path = "/states" , consumes = MediaType.APPLICATION_JSON_VALUE)
     public State create(@RequestBody State newState) {
-        service.save(newState);
+        repo.save(newState);
         return newState;
     }
 
@@ -82,7 +82,7 @@ public class BlogController {
 
     @PutMapping(path = "/states/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public String update(@PathVariable(name = "id", required = false) int id, @RequestBody State newState) {
-        int upd = service.update(id, newState);
+        int upd = repo.update(id, newState);
         if(upd>0) {
             return String.format("State with id = %d updated", id);
         }
@@ -91,7 +91,7 @@ public class BlogController {
 
     @DeleteMapping("/states/{id}")
     public String delete(@PathVariable(name = "id", required = false) int id) {
-        int del = service.delete(id);
+        int del = repo.delete(id);
         if(del>0) {
             return String.format("State with id = %d deleted", id);
         }

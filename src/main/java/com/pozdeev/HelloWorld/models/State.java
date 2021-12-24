@@ -1,39 +1,37 @@
 package com.pozdeev.HelloWorld.models;
-
-
-
 //import javax.persistence.Id;
 //import javax.persistence.Column;
 //import javax.persistence.Entity;
 //import javax.persistence.GeneratedValue;
 //import javax.persistence.GenerationType;
 
+
 public class State {
 
-    private Integer state_id;
+    private Integer stateId;
 
     private String title;
 
     private String anons;
 
-    private String full_text;
+    private String fullText;
 
     public State() {  }
 
 
     public State(Integer id, String title, String anons, String full) {
-        this.state_id = id;
+        this.stateId = id;
         this.title = title;
         this.anons = anons;
-        this.full_text = full;
+        this.fullText = full;
     }
 
-    public Integer getState_id() {
-        return state_id;
+    public Integer getStateId() {
+        return stateId;
     }
 
-    public void setState_id(Integer state_id) {
-        this.state_id = state_id;
+    public void setStateId(Integer stateId) {
+        this.stateId = stateId;
     }
 
     public String getTitle() {
@@ -52,11 +50,11 @@ public class State {
         this.anons = anons;
     }
 
-    public String getFull_text() {
-        return full_text;
+    public String getFullText() {
+        return fullText;
     }
 
-    public void setFull_text(String full_text) {
-        this.full_text = full_text;
+    public void setFullText(String fullText) {
+        this.fullText = fullText;
     }
 }

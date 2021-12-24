@@ -1,4 +1,4 @@
-package com.pozdeev.HelloWorld.services;
+package com.pozdeev.HelloWorld.Repositories;
 
 import com.pozdeev.HelloWorld.models.State;
 import org.springframework.stereotype.Component;
@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component("list")
-public class StateServiceListImpl implements StateService {
+public class StateRepoListImpl implements StateRepo {
 
-    private static int STATE_COUNT;
-    private List<State> states;
+    private int STATE_COUNT;
+    private final List<State> states;
 
     {
         states = new ArrayList<>();
@@ -25,10 +25,6 @@ public class StateServiceListImpl implements StateService {
                 "Very popular tool for Web application development"));
     }
 
-    private String getName() {
-        return "list";
-    }
-
     @Override
     public List<State> readAll() {
         return states;
@@ -37,7 +33,7 @@ public class StateServiceListImpl implements StateService {
     @Override
     public State read(int id) {
         for (State state: states) {
-            if (state.getState_id() == id) {
+            if (state.getStateId() == id) {
                 return state;
             }
         }
@@ -46,7 +42,7 @@ public class StateServiceListImpl implements StateService {
 
     @Override
     public int save(State state) {
-        state.setState_id(STATE_COUNT++);
+        state.setStateId(STATE_COUNT++);
         states.add(state);
         return 1;
     }
@@ -57,7 +53,7 @@ public class StateServiceListImpl implements StateService {
         if(forUp != null) {
             forUp.setTitle(state.getTitle());
             forUp.setAnons(state.getAnons());
-            forUp.setFull_text(state.getFull_text());
+            forUp.setFullText(state.getFullText());
             return 1;
         }
        return 0;
@@ -65,7 +61,7 @@ public class StateServiceListImpl implements StateService {
 
     @Override
     public int delete(int id) {
-        if (states.removeIf(state -> state.getState_id() == id)) {
+        if (states.removeIf(state -> state.getStateId() == id)) {
             return 1;
         }
         return 0;

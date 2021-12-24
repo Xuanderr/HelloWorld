@@ -1,4 +1,4 @@
-package com.pozdeev.HelloWorld.services;
+package com.pozdeev.HelloWorld.Repositories;
 
 import com.pozdeev.HelloWorld.models.State;
 import org.springframework.stereotype.Component;
@@ -8,17 +8,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component("database")
-public class StateServiceDatabaseImpl implements StateService{
+public class StateRepoDatabaseImpl implements StateRepo{
 
     private static final String DB_DRIVER = "org.postgresql.Driver";
     private static final String DB_URL = "jdbc:postgresql://localhost:5432/HelloWorldDataBase";
     private static final String DB_USER = "postgres";
     private static final String DB_PASSWORD = "123";
 
+    private static final String SELECT_ALL = "SELECT * FROM states ORDER BY state_id ASC";
+    private static final String SELECT = "SELECT * FROM states WHERE state_id = ?";
+    private static final String INSERT = "INSERT INTO states (title, anons, full_text) VALUES (?, ?, ?)";
+    private static final String UPDATE = "UPDATE states SET title = ?, anons = ?, full_text = ? WHERE state_id = ?";
+    private static final String DELETE = "DELETE FROM states WHERE state_d = ?";
 
-    private String getName() {
-        return "database";
-    }
 
     private Connection getDBConnection() throws SQLException {
         // Maybe need in future
@@ -34,10 +36,9 @@ public class StateServiceDatabaseImpl implements StateService{
     public List<State> readAll() {
 
         try( Connection dbConnection = getDBConnection();
-             Statement statement = dbConnection.createStatement())
+             PreparedStatement preparedStatement = dbConnection.prepareStatement(SELECT_ALL))
         {
-            String readAllSQL = "SELECT * FROM states ORDER BY state_id ASC ";
-            ResultSet resultSet = statement.executeQuery(readAllSQL);
+            ResultSet resultSet = preparedStatement.executeQuery();
 
             // question about vision area?
             List<State> states = new ArrayList<>();
@@ -50,6 +51,7 @@ public class StateServiceDatabaseImpl implements StateService{
             }
             return states;
         } catch (SQLException e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -58,35 +60,38 @@ public class StateServiceDatabaseImpl implements StateService{
     public State read(int id) {
 
         try( Connection dbConnection = getDBConnection();
-             Statement statement = dbConnection.createStatement())
+             PreparedStatement preparedStatement = dbConnection.prepareStatement(SELECT))
         {
-            String readOneSQL = String.format("SELECT * FROM states WHERE state_id = %d", id);
-            ResultSet resultSet = statement.executeQuery(readOneSQL);
+            preparedStatement.setInt(1, id);
+            ResultSet resultSet = preparedStatement.executeQuery();
 
             // question about vision area?
             State state = new State();
 
             while (resultSet.next()) {
-                state.setState_id(resultSet.getInt("state_id"));
+                state.setStateId(resultSet.getInt("state_id"));
                 state.setTitle(resultSet.getString("title"));
                 state.setAnons(resultSet.getString("anons"));
-                state.setFull_text(resultSet.getString("full_text"));
+                state.setFullText(resultSet.getString("full_text"));
             }
             return state;
         } catch (SQLException e) {
+            e.printStackTrace();
             return null;
         }
     }
-
+    // hibernate
     @Override
     public int save(State state) {
 
         try (Connection dbConnection = getDBConnection();
-             Statement statement = dbConnection.createStatement()) {
-            String readOneSQL = String.format("INSERT INTO states (title, anons, full_text) VALUES ('%s', '%s', '%s')",
-                    state.getTitle(), state.getAnons(), state.getFull_text());
+             PreparedStatement preparedStatement = dbConnection.prepareStatement(INSERT))
+        {
+            preparedStatement.setString(1, state.getTitle());
+            preparedStatement.setString(2, state.getAnons());
+            preparedStatement.setString(3, state.getFullText());
 
-            return statement.executeUpdate(readOneSQL);
+            return preparedStatement.executeUpdate();
 
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -98,13 +103,14 @@ public class StateServiceDatabaseImpl implements StateService{
     public int update(int id, State state) {
 
         try (Connection dbConnection = getDBConnection();
-             Statement statement = dbConnection.createStatement()) {
-            String readOneSQL =
-                    String.format("UPDATE states SET title = '%s', anons = '%s', full_text = '%s'  " +
-                                    "WHERE state_id = %d",
-                    state.getTitle(), state.getAnons(), state.getFull_text(), id);
+             PreparedStatement preparedStatement = dbConnection.prepareStatement(UPDATE))
+        {
+            preparedStatement.setString(1, state.getTitle());
+            preparedStatement.setString(2, state.getAnons());
+            preparedStatement.setString(3, state.getFullText());
+            preparedStatement.setInt(4, id);
 
-            return statement.executeUpdate(readOneSQL);
+            return preparedStatement.executeUpdate();
 
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -116,11 +122,11 @@ public class StateServiceDatabaseImpl implements StateService{
     public int delete(int id) {
 
         try (Connection dbConnection = getDBConnection();
-             Statement statement = dbConnection.createStatement()) {
-            String readOneSQL =
-                    String.format("DELETE FROM states WHERE state_id = %d", id);
+             PreparedStatement preparedStatement = dbConnection.prepareStatement(DELETE))
+        {
+            preparedStatement.setInt(1, id);
 
-            return statement.executeUpdate(readOneSQL);
+            return preparedStatement.executeUpdate();
 
         } catch (SQLException ex) {
             ex.printStackTrace();
