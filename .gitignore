@@ -4,5 +4,5 @@ HELP.md
 .mvn
 target/
 
-
-
+/src/main/java/com/pozdeev/HelloWorld/old/
+/src/main/resources/templates/

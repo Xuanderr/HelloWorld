@@ -1,100 +1,84 @@
 package com.pozdeev.HelloWorld.controllers;
 
 
-import com.pozdeev.HelloWorld.Repositories.StateRepo;
-import com.pozdeev.HelloWorld.Repositories.StateRepoDatabaseImpl;
-import com.pozdeev.HelloWorld.Repositories.StateRepoListImpl;
-import com.pozdeev.HelloWorld.models.State;
+import com.pozdeev.HelloWorld.models.entities.User;
+import com.pozdeev.HelloWorld.services.BlogService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
+@RequestMapping("/blog")
 public class BlogController {
 
-    private StateRepo repo;
+    private final BlogService service;
 
     @Autowired
-    @Qualifier("database")
-    public void setRepo(StateRepo repo) {
-        this.repo = repo;
+    public BlogController(BlogService blogService) {
+        this.service = blogService;
     }
 
-    @GetMapping("/info")
-    public String getComponentName() {
-        String[] info = Arrays.toString(repo.getClass().getAnnotations()).split("\\.");
-        String res = info[info.length-1];
-        return res.substring(0, res.length() - 1);
+    @GetMapping("/hello")
+    public String forAll() {
+        return "MAIN BLOG PAGE";
     }
 
-    @GetMapping("/change")
-    public void change(@RequestParam(value = "type", required = false) String type) {
-        switch (type) {
-            case "list" -> setRepo(new StateRepoListImpl());
-            case "database" -> setRepo(new StateRepoDatabaseImpl());
-        }
+    @GetMapping("/success_login")
+    public String successLogin() {
+        return "Congratulations! You are authorized.";
     }
 
-    @GetMapping("/states")
-    public List<State> read() {
-        return repo.readAll();
+    @GetMapping("/auth")
+    @PreAuthorize("hasAuthority('users:read')")
+    public ResponseEntity<List<User>> getUsers() {
+        List<User> users = service.findAllUsers();
+        return users.isEmpty()
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(users, HttpStatus.OK);
     }
 
-    @GetMapping("/states/{id}")
-    public State read(@PathVariable(name = "id", required = false) int id) {
-        State state = repo.read(id);
-        if (state == null && getComponentName().endsWith("st\")") ) {
-            return new State();
-        }
-        return state;
+    @GetMapping("/auth/{id}")
+    @PreAuthorize("hasAuthority('users:read')")
+    public ResponseEntity<User> getOneUser(@PathVariable(name = "id", required = false) int id) {
+        Optional<User> user = service.findUserById(id);
+        return user.isEmpty()
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(user.get(), HttpStatus.OK);
     }
 
-    @PostMapping(path = "/states" , consumes = MediaType.APPLICATION_JSON_VALUE)
-    public State create(@RequestBody State newState) {
-        repo.save(newState);
-        return newState;
+    @PostMapping(path = "/auth" , consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAuthority('users:create')")
+    public ResponseEntity<User> createUser(@RequestBody User newUser) {
+        User user = service.createNewUser(newUser);
+        return user.getUserId() == null
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-//    Усложненый вариант @PostMapping без аннотации @ModelAttribute
-//    @PostMapping()
-//    public String create(@RequestParam("name") String name, @RequestParam("surname") String surname,
-//                         @RequestParam("email") String email, Model model) {
-//
-//        Person person = new Person(); //автоматически делается при аннотации @ModelAttribute
-//        person.setName(name); //автоматически делается при аннотации @ModelAttribute
-//
-//        //добавление в БД
-//
-//        model.addAttribute("person", person); //автоматически делается при аннотации @ModelAttribute
-//        return "successPage";
-//    }
-//
-//
-//    @PostMapping()
-//    public String create(@ModelAttribute("person") Person person) {
-//        personDAO.save(person);
-//        return "redirect:/people";
-//    }
-
-    @PutMapping(path = "/states/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public String update(@PathVariable(name = "id", required = false) int id, @RequestBody State newState) {
-        int upd = repo.update(id, newState);
-        if(upd>0) {
-            return String.format("State with id = %d updated", id);
-        }
-        return "Updating failed";
+    //@PathVariable(name = "id", required = false) int id,
+    @PutMapping(path = "/auth/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAuthority('users:update')")
+    public ResponseEntity<User> updateUser(@RequestBody User user) {
+        User updUser = service.updateUser(user);
+        return updUser == null
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(updUser, HttpStatus.OK);
     }
 
-    @DeleteMapping("/states/{id}")
-    public String delete(@PathVariable(name = "id", required = false) int id) {
-        int del = repo.delete(id);
-        if(del>0) {
-            return String.format("State with id = %d deleted", id);
-        }
-        return "Deleting failed";
+    @DeleteMapping("/auth/{id}")
+    @PreAuthorize("hasAuthority('users:delete')")
+    public ResponseEntity<?> delete(@PathVariable(name = "id", required = false) int id) {
+        boolean del = service.deleteUserById(id);
+        return del
+                ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
+                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+
+
 }
