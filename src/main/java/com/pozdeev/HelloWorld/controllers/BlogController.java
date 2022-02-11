@@ -2,12 +2,13 @@ package com.pozdeev.HelloWorld.controllers;
 
 
 import com.pozdeev.HelloWorld.models.entities.User;
-import com.pozdeev.HelloWorld.services.BlogService;
+import com.pozdeev.HelloWorld.services.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,15 +18,18 @@ import java.util.Optional;
 @RequestMapping("/blog")
 public class BlogController {
 
-    private final BlogService service;
+    private final static Logger LOGGER = LoggerFactory.getLogger(BlogController.class.getName());
+
+    private final UserService service;
 
     @Autowired
-    public BlogController(BlogService blogService) {
+    public BlogController(UserService blogService) {
         this.service = blogService;
     }
 
     @GetMapping("/hello")
     public String forAll() {
+        LOGGER.info("IN forAll()");
         return "MAIN BLOG PAGE";
     }
 
@@ -35,7 +39,6 @@ public class BlogController {
     }
 
     @GetMapping("/auth")
-    @PreAuthorize("hasAuthority('users:read')")
     public ResponseEntity<List<User>> getUsers() {
         List<User> users = service.findAllUsers();
         return users.isEmpty()
@@ -44,8 +47,7 @@ public class BlogController {
     }
 
     @GetMapping("/auth/{id}")
-    @PreAuthorize("hasAuthority('users:read')")
-    public ResponseEntity<User> getOneUser(@PathVariable(name = "id", required = false) int id) {
+    public ResponseEntity<User> getOneUser(@PathVariable(name = "id", required = false) Long id) {
         Optional<User> user = service.findUserById(id);
         return user.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
@@ -53,8 +55,7 @@ public class BlogController {
     }
 
     @PostMapping(path = "/auth" , consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAuthority('users:create')")
-    public ResponseEntity<User> createUser(@RequestBody User newUser) {
+    public ResponseEntity<User> registration(@RequestBody User newUser) {
         User user = service.createNewUser(newUser);
         return user.getUserId() == null
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
@@ -63,7 +64,6 @@ public class BlogController {
 
     //@PathVariable(name = "id", required = false) int id,
     @PutMapping(path = "/auth/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAuthority('users:update')")
     public ResponseEntity<User> updateUser(@RequestBody User user) {
         User updUser = service.updateUser(user);
         return updUser == null
@@ -72,8 +72,7 @@ public class BlogController {
     }
 
     @DeleteMapping("/auth/{id}")
-    @PreAuthorize("hasAuthority('users:delete')")
-    public ResponseEntity<?> delete(@PathVariable(name = "id", required = false) int id) {
+    public ResponseEntity<?> delete(@PathVariable(name = "id", required = false) Long id) {
         boolean del = service.deleteUserById(id);
         return del
                 ? new ResponseEntity<>(HttpStatus.NO_CONTENT)

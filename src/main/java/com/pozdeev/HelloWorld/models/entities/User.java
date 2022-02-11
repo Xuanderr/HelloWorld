@@ -7,6 +7,7 @@ import com.pozdeev.HelloWorld.models.security.Role;
 import com.pozdeev.HelloWorld.models.security.Status;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -16,7 +17,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private Long userId;
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -27,13 +28,16 @@ public class User {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name = "role", nullable = false)
+    @Column(name = "role")
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Role role = Role.USER;
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private Status status;
+    private Status status = Status.ACTIVE;
+
+    @Column(name = "created_date_time", updatable = false)
+    private LocalDateTime created;
 
     @JsonIgnore
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -45,20 +49,29 @@ public class User {
 
     public User() { }
 
-    public User(Integer userId, String name, String email, String password, Role role, Status status) {
+    public User(Long userId, String name, String email, String password, Role role, Status status, LocalDateTime created) {
         this.userId = userId;
         this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
         this.status = status;
+        this.created = created;
     }
 
-    public Integer getUserId() {
+    public User(Long userId, String name, String email, String password, LocalDateTime created) {
+        this.userId = userId;
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.created = created;
+    }
+
+    public Long getUserId() {
         return userId;
     }
 
-    public void setUserId(Integer userId) {
+    public void setUserId(Long userId) {
         this.userId = userId;
     }
 
@@ -102,6 +115,14 @@ public class User {
         this.status = status;
     }
 
+    public LocalDateTime getCreated() {
+        return created;
+    }
+
+    public void setCreated(LocalDateTime created) {
+        this.created = created;
+    }
+
     public List<Article> getArticles() {
         return articles;
     }
@@ -116,5 +137,18 @@ public class User {
 
     public void setComments(List<Comment> comments) {
         this.comments = comments;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "userId=" + userId +
+                ", name='" + name + '\'' +
+                ", email='" + email + '\'' +
+                ", password='" + password + '\'' +
+                ", role=" + role +
+                ", status=" + status +
+                ", created=" + created +
+                '}';
     }
 }
