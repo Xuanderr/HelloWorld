@@ -57,33 +57,34 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public boolean validateAccessTokenStructure(String token) throws JwtAuthenticationException {
-        LOGGER.info("IN validateAccessTokenStructure()");
-        return validateTokenStructure(token, accessSecretKey);
-    }
-
-    public boolean validateRefreshTokenStructure(String token) {
-        LOGGER.info("IN validateRefreshTokenStructure()");
-        return validateTokenStructure(token, refreshSecretKey);
-    }
-
-    private boolean validateTokenStructure(String token, String secretKey) {
-        try {
-            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
-            return true;
-        } catch(UnsupportedJwtException e) {
-            LOGGER.info("IN validateTokenStructure(): UnsupportedJwtException");
-        } catch (MalformedJwtException e) {
-            LOGGER.info("IN validateTokenStructure(): MalformedJwtException");
-        } catch (SignatureException e) {
-            LOGGER.info("IN validateTokenStructure(): SignatureException");
-        } catch (ExpiredJwtException e) {
-            LOGGER.info("IN validateTokenStructure(): ExpiredJwtException");
-        } catch (IllegalArgumentException e) {
-            LOGGER.info("IN validateTokenStructure(): IllegalArgumentException");
-        }
-        return false;
-    }
+//    public void validateAccessTokenStructure(String token) throws JwtAuthenticationException {
+//        validateTokenStructure(token, accessSecretKey);
+//    }
+//
+//    public void validateRefreshTokenStructure(String token) {
+//        validateTokenStructure(token, refreshSecretKey);
+//    }
+//
+//    private void validateTokenStructure(String token, String secretKey) {
+//        try {
+//            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+//        } catch(UnsupportedJwtException e) {
+//            LOGGER.debug("IN validateTokenStructure(): UnsupportedJwtException", e);
+//            throw e;
+//        } catch (MalformedJwtException e) {
+//            LOGGER.debug("IN validateTokenStructure(): MalformedJwtException", e);
+//            throw e;
+//        } catch (SignatureException e) {
+//            LOGGER.debug("IN validateTokenStructure(): SignatureException", e);
+//            throw e;
+//        } catch (ExpiredJwtException e) {
+//            LOGGER.debug("IN validateTokenStructure(): ExpiredJwtException", e);
+//            throw e;
+//        } catch (IllegalArgumentException e) {
+//            LOGGER.debug("IN validateTokenStructure(): IllegalArgumentException", e);
+//            throw e;
+//        }
+//    }
 
     public Claims getAccessClaims(String token) {
         return getClaims(token, accessSecretKey);
@@ -94,6 +95,25 @@ public class JwtTokenProvider {
     }
 
     private Claims getClaims(String token, String secret) {
-        return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
+        // Also, this method do checking of validation TokenStructure
+        try {
+            return Jwts.parser().
+                    setSigningKey(secret).parseClaimsJws(token).getBody();
+        } catch(UnsupportedJwtException e) {
+            LOGGER.debug("IN getClaims(): UnsupportedJwtException", e);
+            throw e;
+        } catch (MalformedJwtException e) {
+            LOGGER.debug("IN getClaims(): MalformedJwtException", e);
+            throw e;
+        } catch (SignatureException e) {
+            LOGGER.debug("IN getClaims(): SignatureException", e);
+            throw e;
+        } catch (ExpiredJwtException e) {
+            LOGGER.debug("IN getClaims(): ExpiredJwtException", e);
+            throw e;
+        } catch (IllegalArgumentException e) {
+            LOGGER.debug("IN getClaims(): IllegalArgumentException", e);
+            throw e;
+        }
     }
 }

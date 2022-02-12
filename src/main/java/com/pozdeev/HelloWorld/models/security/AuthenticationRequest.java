@@ -1,9 +1,6 @@
 package com.pozdeev.HelloWorld.models.security;
 
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class AuthenticationRequest {
 
     private String email;

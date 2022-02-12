@@ -7,8 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,15 +24,17 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Set;
 
 @Component
 public class JwtTokenPersistenceFilter extends GenericFilterBean {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(JwtTokenPersistenceFilter.class.getName());
-    private static final String AUTHENTICATION_SCHEME_JWT_ACCESS_TOKEN = "Bearer";
-    private static final String AUTHENTICATION_SCHEME_JWT_REFRESH_TOKEN = "Bearer";
+    private static final String AUTHENTICATION_SCHEME_JWT_TOKEN = "Bearer";
+    //private static final String AUTHENTICATION_SCHEME_JWT_REFRESH_TOKEN = "Bearer";
     private static final String HTTP_HEADER_REFRESH = "Refresh";
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -46,37 +50,31 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
 
-        LOGGER.info("IN JwtTokenPersistenceFilter()");
-        String token = getTokenFromRequest((HttpServletRequest) servletRequest);
-        if(token == null) {
-            filterChain.doFilter(servletRequest, servletResponse);
-            return;
-        }
-
-        if(refreshFlag) {
-            setRefreshFlag(false);
-            Authentication authentication = getAuthenticationFromRefreshToken(token);
-            authentication.setAuthenticated(true);
-            SecurityContext context = SecurityContextHolder.createEmptyContext();
-            context.setAuthentication(authentication);
-            SecurityContextHolder.setContext(context);
-
-            filterChain.doFilter(servletRequest, servletResponse);
-        } else {
-
-            if(jwtTokenProvider.validateAccessTokenStructure(token)) {
-                Authentication authentication = getAuthenticationFromAccessToken(token);
-                authentication.setAuthenticated(true);
-                SecurityContext context = SecurityContextHolder.createEmptyContext();
-                context.setAuthentication(authentication);
-                SecurityContextHolder.setContext(context);
-
+        try {
+            String token = getTokenFromRequest((HttpServletRequest) servletRequest);
+            if(token == null) {
                 filterChain.doFilter(servletRequest, servletResponse);
+                return;
+            }
+            if(refreshFlag) {
+                setRefreshFlag(false);
+                Authentication authentication = getAuthenticationFromRefreshToken(token);
+                injectAuthenticationIntoContext(authentication);
 
             } else {
-                throw new AuthenticationException("Access Token is invalid");
+                Authentication authentication = getAuthenticationFromAccessToken(token);
+                injectAuthenticationIntoContext(authentication);
             }
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+
+        } catch (BadCredentialsException e) {
+            LOGGER.debug("IN doFilter(): BadCredentialsException", e);
+        } catch (AuthenticationException e) {
+            LOGGER.debug("IN doFilter(): AuthenticationException", e);
         }
+        ((HttpServletResponse) servletResponse)
+                .sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase());
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
@@ -92,13 +90,13 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
             return null;
         }
         header = header.trim();
-        if (!StringUtils.startsWithIgnoreCase(header, AUTHENTICATION_SCHEME_JWT_ACCESS_TOKEN)) {
+        if (!StringUtils.startsWithIgnoreCase(header, AUTHENTICATION_SCHEME_JWT_TOKEN)) {
             return null;
         }
-        if (header.equalsIgnoreCase(AUTHENTICATION_SCHEME_JWT_ACCESS_TOKEN)) {
+        if (header.equalsIgnoreCase(AUTHENTICATION_SCHEME_JWT_TOKEN)) {
             throw new BadCredentialsException("Empty JWT Access token");
         }
-        return header;
+        return header.substring(7);
     }
 
     private String getRefreshTokenFromRequest(HttpServletRequest request) {
@@ -107,24 +105,32 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
             return null;
         }
         header = header.trim();
-        if (!StringUtils.startsWithIgnoreCase(header, AUTHENTICATION_SCHEME_JWT_REFRESH_TOKEN)) {
+        if (!StringUtils.startsWithIgnoreCase(header, AUTHENTICATION_SCHEME_JWT_TOKEN)) {
             return null;
         }
-        if (header.equalsIgnoreCase(AUTHENTICATION_SCHEME_JWT_REFRESH_TOKEN)) {
+        if (header.equalsIgnoreCase(AUTHENTICATION_SCHEME_JWT_TOKEN)) {
             throw new BadCredentialsException("Empty JWT Refresh token");
         }
         setRefreshFlag(true);
-        return header;
+        return header.substring(7);
     }
 
     private void setRefreshFlag(boolean refreshFlag) {
         this.refreshFlag = refreshFlag;
     }
 
+    private void injectAuthenticationIntoContext(Authentication authentication) {
+        authentication.setAuthenticated(true);
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+    }
+
     private Authentication getAuthenticationFromAccessToken(String token) {
         Claims accessClaims = jwtTokenProvider.getAccessClaims(token);
         String email = accessClaims.getSubject();
         String role = accessClaims.get("role", String.class);
+
         return new JwtUserAuthenticationToken(email, role, Role.valueOf(role).getAuthorities());
     }
 

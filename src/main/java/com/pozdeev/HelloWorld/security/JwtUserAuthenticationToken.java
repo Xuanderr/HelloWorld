@@ -16,7 +16,6 @@ public class JwtUserAuthenticationToken implements Authentication {
     private final Set<SimpleGrantedAuthority> authorities;
     private boolean isAuthenticated;
 
-
     public JwtUserAuthenticationToken(String username, String role, Set<SimpleGrantedAuthority> authorities) {
         this.username = username;
         this.role = role;
@@ -40,7 +39,7 @@ public class JwtUserAuthenticationToken implements Authentication {
 
     @Override
     public String getPrincipal() {
-        return role;
+        return username;
     }
 
     @Override
@@ -55,7 +54,7 @@ public class JwtUserAuthenticationToken implements Authentication {
 
     @Override
     public String getName() {
-        return username;
+        return role;
     }
 
 }

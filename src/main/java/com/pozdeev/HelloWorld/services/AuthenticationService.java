@@ -37,15 +37,9 @@ public class AuthenticationService {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    private boolean validateRefreshToken(String refreshToken) {
-        if(!jwtTokenProvider.validateRefreshTokenStructure(refreshToken)) {
-            return false;
-        }
-
-        String email = jwtTokenProvider.getRefreshClaims(refreshToken).getSubject();
+    private boolean validateRefreshToken(String email, String refreshToken) {
         String saveRefreshToken = refreshStorage.get(email);
         return saveRefreshToken.equals(refreshToken);
-
     }
 
     public AuthenticationResponse login(AuthenticationRequest request) {
@@ -63,14 +57,18 @@ public class AuthenticationService {
 
 
     public AuthenticationResponse refresh(String refreshToken) {
-        if (!validateRefreshToken(refreshToken)) {
-            return null;
+        try {
+            String email = jwtTokenProvider.getRefreshClaims(refreshToken).getSubject();
+            if (!validateRefreshToken(email, refreshToken)) {
+                return null;
+            }
+            String newAccessToken = jwtTokenProvider.generateAccessToken(email, role.name());
+            String newRefreshToken = jwtTokenProvider.generateRefreshToken(email);
+            refreshStorage.put(email, newRefreshToken);
+            return new AuthenticationResponse(newAccessToken, newRefreshToken);
+        } catch (AuthenticationException ex) {
+            LOGGER.debug("Authentication failed", ex);
         }
-
-        String email = jwtTokenProvider.getRefreshClaims(refreshToken).getSubject();
-        String newAccessToken = jwtTokenProvider.generateAccessToken(email, role.name());
-        String newRefreshToken = jwtTokenProvider.generateRefreshToken(email);
-        refreshStorage.put(email, newRefreshToken);
-        return new AuthenticationResponse(newAccessToken, newRefreshToken);
+        return null;
     }
 }
