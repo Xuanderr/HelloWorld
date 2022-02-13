@@ -164,6 +164,10 @@ public class Article {
         this.tags = tags;
     }
 
+    public void viewsIncrement() {
+        this.views += 1;
+    }
+
     @Override
     public String toString() {
         return "Article{" +

@@ -1,13 +1,17 @@
 package com.pozdeev.HelloWorld.models.security;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 public enum Permission {
     USERS_READ("users:read"),
-    USERS_CREATE("users:create"),
     USERS_UPDATE("users:update"),
+    USERS_PROPERTIES_UPDATE("users:properties_update"),
     USERS_DELETE("users:delete"),
+    COMMENTS_UPDATE("comment:update"),
+    TAGS_CREATE("tags:create"),
+    TAGS_UPDATE("tags:update"),
+    TAGS_DELETE("tags:delete"),
     TOKEN_REFRESH("token:refresh");
+
 
     private final String permission;
 

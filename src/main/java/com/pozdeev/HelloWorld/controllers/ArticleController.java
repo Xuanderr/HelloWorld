@@ -2,7 +2,6 @@ package com.pozdeev.HelloWorld.controllers;
 
 
 import com.pozdeev.HelloWorld.models.entities.Article;
-import com.pozdeev.HelloWorld.repositories.ArticleRepo;
 import com.pozdeev.HelloWorld.services.ArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -14,9 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-
 @RestController
 public class ArticleController {
 
@@ -27,67 +23,65 @@ public class ArticleController {
         this.articleService = articleService;
     }
 
-    @GetMapping("/main")
-    public ResponseEntity<Page<Article>> getMainPage(
+    @GetMapping("/posts")
+    public ResponseEntity<Page<Article>> getAll(
             @PageableDefault(sort = {"views"}, direction = Sort.Direction.DESC) Pageable pageable)
     {
-        Page<Article> page = articleService.getAll(pageable);
+        Page<Article> page = articleService.allArticles(pageable);
         return page.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
                 : new ResponseEntity<>(page, HttpStatus.OK);
     }
 
-    //like
+    @GetMapping("/posts/{id}")
+    public ResponseEntity<Article> getOneArticleByID(@PathVariable(name = "id") Long id) {
+        Article article = articleService.oneArticle(id);
+        return article == null
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(article, HttpStatus.OK);
+    }
 
-//    @GetMapping("/main")
-//    public ResponseEntity<Page<Article>> getMainPage(
-//            @PageableDefault(sort = {"views"}, direction = Sort.Direction.DESC) Pageable pageable)
-//    {
-//        Page<Article> page = articleService.getAll(pageable);
-//        return page.isEmpty()
-//                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-//                : new ResponseEntity<>(page, HttpStatus.OK);
-//    }
-//
-//    @GetMapping("/{id}")
-//    public ResponseEntity<Article> read(@PathVariable(name = "id", required = false) int id) {
-//
-//        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-//    }
-//
-//    @PostMapping(path = "/" , consumes = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<?> create(@RequestBody Article newArticle) {
-//        return new ResponseEntity<>(HttpStatus.CREATED);
-//    }
+    @GetMapping("/posts/str")
+    public ResponseEntity<Page<Article>> getArticleByStr(
+            @PageableDefault(sort = {"views"}, direction = Sort.Direction.DESC) Pageable pageable,
+            @RequestParam(name = "criteria") String criteria)
+    {
+        Page<Article> page = articleService.oneArticleByStr(criteria, pageable);
+        return page.isEmpty()
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(page, HttpStatus.OK);
+    }
 
-//    Усложненый вариант @PostMapping без аннотации @ModelAttribute
-//    @PostMapping()
-//    public String create(@RequestParam("name") String name, @RequestParam("surname") String surname,
-//                         @RequestParam("email") String email, Model model) {
-//
-//        Person person = new Person(); //автоматически делается при аннотации @ModelAttribute
-//        person.setName(name); //автоматически делается при аннотации @ModelAttribute
-//
-//        //добавление в БД
-//
-//        model.addAttribute("person", person); //автоматически делается при аннотации @ModelAttribute
-//        return "successPage";
-//    }
+    @GetMapping("/posts/likes/{id}")
+    public ResponseEntity<?> likes(@PathVariable(name = "id") Long id, @RequestParam(name = "likes") int likes) {
+        Article article = articleService.saveCurrentLikes(id, likes);
+        return article == null
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(HttpStatus.OK);
+    }
 
+    @PostMapping(path = "/posts" , consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Article> create(@RequestBody Article newArticle) {
+        Article article = articleService.createNewArticle(newArticle);
+        return article.getArticleId() == null
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(article, HttpStatus.OK);
+    }
 
-//    @PostMapping()
-//    public String create(@ModelAttribute("person") Person person) {
-//        personDAO.save(person);
-//        return "redirect:/people";
-//    }
+    @PutMapping(path = "/posts", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Article> update(@RequestBody Article article) {
+        Article updArticle = articleService.updateArticle(article);
+        return updArticle == null
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(updArticle, HttpStatus.OK);
+    }
 
-//    @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<?>  update(@PathVariable(name = "id", required = false) int id, @RequestBody Article newArticle) {
-//        return new ResponseEntity<>(HttpStatus.OK);
-//    }
-//
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<?> delete(@PathVariable(name = "id", required = false) int id) {
-//        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-//    }
+    @DeleteMapping("/posts/{id}")
+    public ResponseEntity<?> delete(@PathVariable(name = "id") Long id) {
+        boolean del = articleService.deleteArticleById(id);
+        return del
+                ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
+                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
 }

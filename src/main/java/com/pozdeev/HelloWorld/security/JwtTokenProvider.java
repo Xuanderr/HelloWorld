@@ -1,10 +1,10 @@
 package com.pozdeev.HelloWorld.security;
 
-import com.pozdeev.HelloWorld.exception.JwtAuthenticationException;
 import io.jsonwebtoken.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -86,11 +86,11 @@ public class JwtTokenProvider {
 //        }
 //    }
 
-    public Claims getAccessClaims(String token) {
+    public Claims getAccessClaims(String token) throws JwtException {
         return getClaims(token, accessSecretKey);
     }
 
-    public Claims getRefreshClaims(String token) {
+    public Claims getRefreshClaims(String token) throws JwtException {
         return getClaims(token, refreshSecretKey);
     }
 

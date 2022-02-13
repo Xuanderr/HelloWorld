@@ -1,11 +1,10 @@
 package com.pozdeev.HelloWorld.controllers;
 
-import com.pozdeev.HelloWorld.models.security.AuthenticatedRefreshRequest;
-import com.pozdeev.HelloWorld.models.security.AuthenticationRequest;
-import com.pozdeev.HelloWorld.models.security.AuthenticationResponse;
+import com.pozdeev.HelloWorld.models.system_entities.AuthenticatedRefreshRequest;
+import com.pozdeev.HelloWorld.models.system_entities.AuthenticationRequest;
+import com.pozdeev.HelloWorld.models.system_entities.AuthenticationResponse;
+import com.pozdeev.HelloWorld.models.system_entities.LoginResponse;
 import com.pozdeev.HelloWorld.services.AuthenticationService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class AuthenticationController {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(AuthenticationController.class.getName());
-
     private final AuthenticationService authenticationService;
 
     @Autowired
@@ -26,15 +23,16 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest authRequest) {
-        AuthenticationResponse response = authenticationService.login(authRequest);
-        return response == null
-                ? new ResponseEntity<>(HttpStatus.UNAUTHORIZED)
-                : new ResponseEntity<>(response, HttpStatus.OK);
+    public ResponseEntity<LoginResponse> login(@RequestBody AuthenticationRequest authRequest) {
+        LoginResponse response = new LoginResponse();
+        boolean result = authenticationService.login(authRequest, response);
+        return result
+                ? new ResponseEntity<>(response, HttpStatus.OK)
+                : new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthenticationResponse> getNewRefreshToken(@RequestBody AuthenticatedRefreshRequest request) {
+    public ResponseEntity<AuthenticationResponse> getNewTokens(@RequestBody AuthenticatedRefreshRequest request) {
         AuthenticationResponse response = authenticationService.refresh(request.getRefreshToken());
         return response == null
                 ? new ResponseEntity<>(HttpStatus.UNAUTHORIZED)

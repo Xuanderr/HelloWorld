@@ -1,11 +1,16 @@
 package com.pozdeev.HelloWorld.security;
 
+import com.pozdeev.HelloWorld.exception.BlackListException;
+import com.pozdeev.HelloWorld.exception.MismatchRefreshTokenException;
 import com.pozdeev.HelloWorld.models.security.Permission;
 import com.pozdeev.HelloWorld.models.security.Role;
+import com.pozdeev.HelloWorld.services.AuthenticationService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -33,16 +38,18 @@ import java.util.Set;
 public class JwtTokenPersistenceFilter extends GenericFilterBean {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(JwtTokenPersistenceFilter.class.getName());
-    private static final String AUTHENTICATION_SCHEME_JWT_TOKEN = "Bearer";
-    //private static final String AUTHENTICATION_SCHEME_JWT_REFRESH_TOKEN = "Bearer";
-    private static final String HTTP_HEADER_REFRESH = "Refresh";
+    private final static String AUTHENTICATION_SCHEME_JWT_TOKEN = "Bearer";
+    //private final static  String AUTHENTICATION_SCHEME_JWT_REFRESH_TOKEN = "Bearer";
+    private final static String HTTP_HEADER_REFRESH = "Refresh";
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final Memory memory;
     private boolean refreshFlag;
 
     @Autowired
-    public JwtTokenPersistenceFilter(JwtTokenProvider jwtTokenProvider)
+    public JwtTokenPersistenceFilter(JwtTokenProvider jwtTokenProvider, Memory memory)
     {
+        this.memory = memory;
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
@@ -70,8 +77,12 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
 
         } catch (BadCredentialsException e) {
             LOGGER.debug("IN doFilter(): BadCredentialsException", e);
-        } catch (AuthenticationException e) {
-            LOGGER.debug("IN doFilter(): AuthenticationException", e);
+        } catch (JwtException e) {
+            LOGGER.info("IN doFilter(): wrong token structure");
+        } catch (BlackListException e) {
+            LOGGER.debug("IN doFilter(): BlackListException", e);
+        } catch (MismatchRefreshTokenException e) {
+            LOGGER.debug("IN doFilter(): MismatchRefreshTokenException", e);
         }
         ((HttpServletResponse) servletResponse)
                 .sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase());
@@ -126,7 +137,10 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
         SecurityContextHolder.setContext(context);
     }
 
-    private Authentication getAuthenticationFromAccessToken(String token) {
+    private Authentication getAuthenticationFromAccessToken(String token) throws JwtException, BlackListException {
+        if(memory.accessTokenInBlackList(token)) {
+            throw new BlackListException("Access deny because provide AccessToken in BlackList");
+        }
         Claims accessClaims = jwtTokenProvider.getAccessClaims(token);
         String email = accessClaims.getSubject();
         String role = accessClaims.get("role", String.class);
@@ -134,9 +148,12 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
         return new JwtUserAuthenticationToken(email, role, Role.valueOf(role).getAuthorities());
     }
 
-    private Authentication getAuthenticationFromRefreshToken(String token) {
+    private Authentication getAuthenticationFromRefreshToken(String token) throws JwtException, MismatchRefreshTokenException{
         Claims accessClaims = jwtTokenProvider.getRefreshClaims(token);
         String email = accessClaims.getSubject();
+        if (!memory.validateRefreshToken(email, token)) {
+            throw new MismatchRefreshTokenException("Access deny because provide RefreshToken is not found in memory");
+        }
         return new JwtUserAuthenticationToken(email, "",
                 Set.of(new SimpleGrantedAuthority(Permission.TOKEN_REFRESH.getPermission())));
     }

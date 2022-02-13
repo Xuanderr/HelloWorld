@@ -1,4 +1,4 @@
-package com.pozdeev.HelloWorld.models.security;
+package com.pozdeev.HelloWorld.models.system_entities;
 
 
 public class AuthenticatedRefreshRequest {

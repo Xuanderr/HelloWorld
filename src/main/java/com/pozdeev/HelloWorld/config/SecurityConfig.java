@@ -1,6 +1,7 @@
 package com.pozdeev.HelloWorld.config;
 
 import com.pozdeev.HelloWorld.models.security.Permission;
+import com.pozdeev.HelloWorld.security.JwtLogoutSuccessHandler;
 import com.pozdeev.HelloWorld.security.JwtTokenPersistenceFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 
 
@@ -36,20 +38,38 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http
-                .csrf().disable()
+        http.csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
                 .antMatchers("/login").permitAll()
-                .antMatchers(HttpMethod.GET,"/users/**").hasAuthority(Permission.USERS_READ.getPermission())
-                .antMatchers(HttpMethod.POST, "/users/**").hasAuthority(Permission.USERS_CREATE.getPermission())
-                .antMatchers(HttpMethod.PUT, "/users/**").hasAuthority(Permission.USERS_UPDATE.getPermission())
-                .antMatchers(HttpMethod.DELETE, "/users/**").hasAuthority(Permission.USERS_DELETE.getPermission())
                 .antMatchers("/refresh").hasAuthority(Permission.TOKEN_REFRESH.getPermission())
+
+                .antMatchers(HttpMethod.GET, "/posts/**").permitAll()
+                //.antMatchers("/posts/**").authenticated()
+
+
+                .antMatchers(HttpMethod.PUT, "/comments/**").hasAuthority(Permission.COMMENTS_UPDATE.getPermission())
+                .antMatchers(HttpMethod.GET, "/comments/**").permitAll()
+                //.antMatchers("/comments/**").authenticated()
+
+                .antMatchers(HttpMethod.GET,"/users/**").hasAuthority(Permission.USERS_READ.getPermission())
+                .antMatchers(HttpMethod.PUT, "/users/properties/**").hasAuthority(Permission.USERS_PROPERTIES_UPDATE.getPermission())
+                .antMatchers(HttpMethod.POST, "/users/**").permitAll()
+                .antMatchers("/users/**").hasAnyAuthority(Permission.USERS_UPDATE.getPermission(), Permission.USERS_DELETE.getPermission())
+
+                .antMatchers(HttpMethod.GET, "/tags/**").permitAll()
+                .antMatchers("/tags/**").hasAnyAuthority(Permission.TAGS_CREATE.getPermission(), Permission.TAGS_UPDATE.getPermission(), Permission.TAGS_DELETE.getPermission())
+
                 .anyRequest().authenticated()
                 .and()
-                .addFilterBefore(jwtTokenPersistenceFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtTokenPersistenceFilter, UsernamePasswordAuthenticationFilter.class)
+                .logout().logoutSuccessHandler(logoutSuccessHandler());
+    }
+
+    @Bean
+    public LogoutSuccessHandler logoutSuccessHandler() {
+        return new JwtLogoutSuccessHandler();
     }
 
     @Bean

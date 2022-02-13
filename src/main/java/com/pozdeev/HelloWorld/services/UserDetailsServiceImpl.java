@@ -37,6 +37,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         AuthenticationService authenticationService =
                 (AuthenticationService) applicationContext.getBean("authenticationService");
         authenticationService.setRole(user.getRole());
+        authenticationService.setUser(user);
 
         LOGGER.info("IN loadUserByUsername(): After success find user in DB");
         return new org.springframework.security.core.userdetails.User(

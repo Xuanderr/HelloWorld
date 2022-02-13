@@ -1,9 +1,13 @@
 package com.pozdeev.HelloWorld.services;
 
-import com.pozdeev.HelloWorld.models.security.AuthenticationRequest;
-import com.pozdeev.HelloWorld.models.security.AuthenticationResponse;
+import com.pozdeev.HelloWorld.models.entities.User;
+import com.pozdeev.HelloWorld.models.system_entities.AuthenticationRequest;
+import com.pozdeev.HelloWorld.models.system_entities.AuthenticationResponse;
+import com.pozdeev.HelloWorld.models.system_entities.LoginResponse;
 import com.pozdeev.HelloWorld.models.security.Role;
 import com.pozdeev.HelloWorld.security.JwtTokenProvider;
+import com.pozdeev.HelloWorld.security.Memory;
+import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Service
 public class AuthenticationService {
 
@@ -23,51 +24,54 @@ public class AuthenticationService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
-    private final Map<String, String> refreshStorage = new HashMap<>();
+    private final Memory memory;
 
     private Role role;
+    private User user;
 
     protected void setRole(Role role) {
         this.role = role;
     }
 
+    protected void setUser(User user) {
+        this.user = user;
+    }
+
     @Autowired
-    public AuthenticationService(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
+    public AuthenticationService(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider, Memory memory) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.memory = memory;
     }
 
-    private boolean validateRefreshToken(String email, String refreshToken) {
-        String saveRefreshToken = refreshStorage.get(email);
-        return saveRefreshToken.equals(refreshToken);
-    }
-
-    public AuthenticationResponse login(AuthenticationRequest request) {
+    public boolean login(AuthenticationRequest request, LoginResponse loginResponse) {
         try {
             Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
             String accessToken = jwtTokenProvider.generateAccessToken(auth.getName(), role.name());
             String refreshToken = jwtTokenProvider.generateRefreshToken(auth.getName());
-            refreshStorage.put(auth.getName(), refreshToken);
-            return new AuthenticationResponse(accessToken, refreshToken);
+            memory.addToRefreshStorage(auth.getName(), refreshToken);
+            loginResponse.setAccessToken(accessToken);
+            loginResponse.setRefreshToken(refreshToken);
+            loginResponse.setUser(user);
+            return true;
         } catch (AuthenticationException ex) {
-            LOGGER.debug("Authentication failed", ex);
+            LOGGER.info("Authentication failed");
         }
-        return null;
+        return false;
     }
-
 
     public AuthenticationResponse refresh(String refreshToken) {
         try {
             String email = jwtTokenProvider.getRefreshClaims(refreshToken).getSubject();
-            if (!validateRefreshToken(email, refreshToken)) {
+            if (!memory.validateRefreshToken(email, refreshToken)) {
                 return null;
             }
             String newAccessToken = jwtTokenProvider.generateAccessToken(email, role.name());
             String newRefreshToken = jwtTokenProvider.generateRefreshToken(email);
-            refreshStorage.put(email, newRefreshToken);
+            memory.addToRefreshStorage(email, newRefreshToken);
             return new AuthenticationResponse(newAccessToken, newRefreshToken);
-        } catch (AuthenticationException ex) {
-            LOGGER.debug("Authentication failed", ex);
+        } catch (JwtException ex) {
+            LOGGER.info("Authentication failed");
         }
         return null;
     }

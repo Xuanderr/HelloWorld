@@ -12,7 +12,7 @@ public class Tag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(name = "id")
     private Long Id;
 
     @Column(name = "name", nullable = false)
@@ -20,6 +20,8 @@ public class Tag {
 
     @ManyToMany(mappedBy = "tags")
     private Set<Article> articles;
+
+    public Tag() { }
 
     public Tag(Long id, String name) {
         this.Id = id;
