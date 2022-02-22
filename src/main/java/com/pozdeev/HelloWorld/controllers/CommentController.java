@@ -12,12 +12,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
 
 @RestController
 public class CommentController {
 
-    private CommentService commentService;
+    private final CommentService commentService;
 
     @Autowired
     public CommentController(CommentService commentService) {

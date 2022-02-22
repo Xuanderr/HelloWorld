@@ -1,7 +1,5 @@
 package com.pozdeev.HelloWorld.security;
 
-import com.pozdeev.HelloWorld.exception.MismatchRefreshTokenException;
-import com.pozdeev.HelloWorld.services.AuthenticationService;
 import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,13 +27,13 @@ public class JwtLogoutSuccessHandler implements LogoutSuccessHandler {
     private final static String HTTP_HEADER_REFRESH = "Refresh";
 
     private JwtTokenProvider jwtTokenProvider;
-    private Memory memory;
+    private TokenCache tokenCache;
 
     private boolean refreshFlag;
 
     @Autowired
-    public void setMemory(Memory memory) {
-        this.memory = memory;
+    public void setMemory(TokenCache tokenCache) {
+        this.tokenCache = tokenCache;
     }
 
     @Autowired
@@ -55,19 +53,22 @@ public class JwtLogoutSuccessHandler implements LogoutSuccessHandler {
             if(refreshFlag) {
                 setRefreshFlag(false);
                 String subject = jwtTokenProvider.getRefreshClaims(token).getSubject();
-                if (!memory.validateRefreshToken(subject, token)) {
+                if (!tokenCache.validateRefreshToken(subject, token)) {
                     LOGGER.info("IN onLogoutSuccess(): mismatch provide token with saved token");
                     response.sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase());
                     return;
                 }
-                if(!memory.removeFromRefreshStorage(subject)) {
+                if(!tokenCache.removeFromRefreshStorage(subject)) {
                     LOGGER.debug("Deleting element from refreshStorage is failed");
                 }
 
             } else {
-                jwtTokenProvider.getAccessClaims(token);
-                if(!memory.addToBlackList(token)) {
+                String subject = jwtTokenProvider.getAccessClaims(token).getSubject();
+                if(!tokenCache.addToBlackList(token)) {
                     LOGGER.debug("Adding element to blackList is failed");
+                }
+                if(!tokenCache.removeFromRefreshStorage(subject)) {
+                    LOGGER.debug("Deleting element from refreshStorage is failed");
                 }
             }
             response.setStatus(HttpStatus.NO_CONTENT.value());

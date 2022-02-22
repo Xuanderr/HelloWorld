@@ -7,7 +7,7 @@
 --    password text NOT NULL,
 --    role text DEFAULT 'USER',
 --    status text DEFAULT 'ACTIVE',
---    created_date_time timestamp without time zone,
+--    created_date_time timestamp without time zone NOT NULL,
 --    CONSTRAINT users_pkey PRIMARY KEY (user_id),
 --    CONSTRAINT user_email UNIQUE (email),
 --    CONSTRAINT user_name UNIQUE (name)
@@ -20,7 +20,7 @@
 --    anons text NOT NULL,
 --    full_text text NOT NULL,
 --    user_id bigint NOT NULL,
---    created_date_time timestamp without time zone,
+--    created_date_time timestamp without time zone NOT NULL,
 --    views integer,
 --    CONSTRAINT article_pkey PRIMARY KEY (article_id),
 --    CONSTRAINT users_fkey FOREIGN KEY (user_id) REFERENCES users (user_id)
@@ -31,7 +31,7 @@
 --    article_id bigint NOT NULL,
 --    user_id bigint NOT NULL,
 --    full_text text NOT NULL,
---    created_date_time timestamp without time zone,
+--    created_date_time timestamp without time zone NOT NULL,
 --    CONSTRAINT comments_pkey PRIMARY KEY (comment_id),
 --    CONSTRAINT articles_fkey FOREIGN KEY (article_id) REFERENCES articles (article_id),
 --    CONSTRAINT users_fkey FOREIGN KEY (user_id) REFERENCES users (user_id)
@@ -117,6 +117,8 @@ INSERT INTO likes(like_id, user_id, article_id) VALUES(8, 3, 2);
 INSERT INTO likes(like_id, user_id, article_id) VALUES(9, 3, 4);
 INSERT INTO likes(like_id, user_id, article_id) VALUES(10, 4, 3);
 INSERT INTO likes(like_id, user_id, article_id) VALUES(11, 4, 4);
+
+
 
 
 

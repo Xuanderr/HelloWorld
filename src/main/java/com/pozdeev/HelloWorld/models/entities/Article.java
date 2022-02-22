@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -31,14 +30,8 @@ public class Article {
     @JoinColumn(name = "user_id", nullable = false)
     private User author;
 
-    @Column(name = "created_date_time", updatable = false)
+    @Column(name = "created_date_time", nullable = false)
     private LocalDateTime created;
-
-    @Column(name = "likes")
-    private int likes;
-
-    @Column(name = "reposts")
-    private int reposts;
 
     @Column(name = "views")
     private int views;
@@ -47,12 +40,15 @@ public class Article {
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Like> likes;
+
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "article_tags",
+    @JoinTable(name = "articles_tags",
             joinColumns = {@JoinColumn(name = "article_id", referencedColumnName = "article_id")},
             inverseJoinColumns = {@JoinColumn(name = "tag_id", referencedColumnName = "id")})
     private Set<Tag> tags;
-
 
     public Article() {  }
 
@@ -64,15 +60,13 @@ public class Article {
         this.author = author;
     }
 
-    public Article(Long articleId, String title, String anons, String fullText, User author, LocalDateTime created, int likes, int reposts, int views) {
+    public Article(Long articleId, String title, String anons, String fullText, User author, LocalDateTime created, int views) {
         this.articleId = articleId;
         this.title = title;
         this.anons = anons;
         this.fullText = fullText;
         this.author = author;
         this.created = created;
-        this.likes = likes;
-        this.reposts = reposts;
         this.views = views;
     }
 
@@ -124,22 +118,6 @@ public class Article {
         this.created = created;
     }
 
-    public int getLikes() {
-        return likes;
-    }
-
-    public void setLikes(int likes) {
-        this.likes = likes;
-    }
-
-    public int getReposts() {
-        return reposts;
-    }
-
-    public void setReposts(int reposts) {
-        this.reposts = reposts;
-    }
-
     public int getViews() {
         return views;
     }
@@ -164,6 +142,14 @@ public class Article {
         this.tags = tags;
     }
 
+    public List<Like> getLikes() {
+        return likes;
+    }
+
+    public void setLikes(List<Like> likes) {
+        this.likes = likes;
+    }
+
     public void viewsIncrement() {
         this.views += 1;
     }
@@ -177,8 +163,6 @@ public class Article {
                 ", fullText='" + fullText + '\'' +
                 ", author=" + author +
                 ", created=" + created +
-                ", likes=" + likes +
-                ", reposts=" + reposts +
                 ", views=" + views +
                 '}';
     }

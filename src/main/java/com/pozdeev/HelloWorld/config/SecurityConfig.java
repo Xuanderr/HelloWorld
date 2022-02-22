@@ -19,7 +19,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
-import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 
 
 @EnableWebSecurity
@@ -38,7 +37,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.csrf().disable()
+        http
+                .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
@@ -46,12 +46,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/refresh").hasAuthority(Permission.TOKEN_REFRESH.getPermission())
 
                 .antMatchers(HttpMethod.GET, "/posts/**").permitAll()
-                //.antMatchers("/posts/**").authenticated()
-
 
                 .antMatchers(HttpMethod.PUT, "/comments/**").hasAuthority(Permission.COMMENTS_UPDATE.getPermission())
                 .antMatchers(HttpMethod.GET, "/comments/**").permitAll()
-                //.antMatchers("/comments/**").authenticated()
 
                 .antMatchers(HttpMethod.GET,"/users/**").hasAuthority(Permission.USERS_READ.getPermission())
                 .antMatchers(HttpMethod.PUT, "/users/properties/**").hasAuthority(Permission.USERS_PROPERTIES_UPDATE.getPermission())
@@ -61,10 +58,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.GET, "/tags/**").permitAll()
                 .antMatchers("/tags/**").hasAnyAuthority(Permission.TAGS_CREATE.getPermission(), Permission.TAGS_UPDATE.getPermission(), Permission.TAGS_DELETE.getPermission())
 
+                .antMatchers("/like/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .addFilterBefore(jwtTokenPersistenceFilter, UsernamePasswordAuthenticationFilter.class)
                 .logout().logoutSuccessHandler(logoutSuccessHandler());
+
     }
 
     @Bean

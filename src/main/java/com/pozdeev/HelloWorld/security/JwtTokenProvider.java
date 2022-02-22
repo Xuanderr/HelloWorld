@@ -34,7 +34,6 @@ public class JwtTokenProvider {
         final LocalDateTime now = LocalDateTime.now();
         final LocalDateTime expiration = now.plusMinutes(10);
 
-        LOGGER.info("IN generateAccessToken(): Before generate");
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(Date.from(now.atZone(ZoneId.systemDefault()).toInstant()))
@@ -48,7 +47,6 @@ public class JwtTokenProvider {
         final LocalDateTime now = LocalDateTime.now();
         final LocalDateTime expiration = now.plusDays(30);
 
-        LOGGER.info("IN generateRefreshToken(): Before generate");
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(Date.from(now.atZone(ZoneId.systemDefault()).toInstant()))

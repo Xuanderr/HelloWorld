@@ -24,7 +24,7 @@ public class Comment {
     @Column(name = "full_text", nullable = false)
     private String fullText;
 
-    @Column(name = "created_date_time", updatable = false)
+    @Column(name = "created_date_time", nullable = false, updatable = false)
     private LocalDateTime created;
 
     public Comment() {  }

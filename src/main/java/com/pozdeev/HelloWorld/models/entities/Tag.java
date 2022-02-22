@@ -1,9 +1,6 @@
 package com.pozdeev.HelloWorld.models.entities;
 
-import org.springframework.data.annotation.CreatedDate;
-
 import javax.persistence.*;
-import java.util.Objects;
 import java.util.Set;
 
 @Entity

@@ -4,18 +4,15 @@ import com.pozdeev.HelloWorld.exception.BlackListException;
 import com.pozdeev.HelloWorld.exception.MismatchRefreshTokenException;
 import com.pozdeev.HelloWorld.models.security.Permission;
 import com.pozdeev.HelloWorld.models.security.Role;
-import com.pozdeev.HelloWorld.services.AuthenticationService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,7 +20,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.GenericFilterBean;
 
-import javax.security.sasl.AuthenticationException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -31,7 +27,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Set;
 
 @Component
@@ -43,13 +38,13 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
     private final static String HTTP_HEADER_REFRESH = "Refresh";
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final Memory memory;
+    private final TokenCache tokenCache;
     private boolean refreshFlag;
 
     @Autowired
-    public JwtTokenPersistenceFilter(JwtTokenProvider jwtTokenProvider, Memory memory)
+    public JwtTokenPersistenceFilter(JwtTokenProvider jwtTokenProvider, TokenCache tokenCache)
     {
-        this.memory = memory;
+        this.tokenCache = tokenCache;
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
@@ -138,7 +133,7 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
     }
 
     private Authentication getAuthenticationFromAccessToken(String token) throws JwtException, BlackListException {
-        if(memory.accessTokenInBlackList(token)) {
+        if(tokenCache.blackListContains(token)) {
             throw new BlackListException("Access deny because provide AccessToken in BlackList");
         }
         Claims accessClaims = jwtTokenProvider.getAccessClaims(token);
@@ -151,7 +146,7 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
     private Authentication getAuthenticationFromRefreshToken(String token) throws JwtException, MismatchRefreshTokenException{
         Claims accessClaims = jwtTokenProvider.getRefreshClaims(token);
         String email = accessClaims.getSubject();
-        if (!memory.validateRefreshToken(email, token)) {
+        if (!tokenCache.validateRefreshToken(email, token)) {
             throw new MismatchRefreshTokenException("Access deny because provide RefreshToken is not found in memory");
         }
         return new JwtUserAuthenticationToken(email, "",

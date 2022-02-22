@@ -13,6 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 public class ArticleController {
 
@@ -52,12 +54,15 @@ public class ArticleController {
                 : new ResponseEntity<>(page, HttpStatus.OK);
     }
 
-    @GetMapping("/posts/likes/{id}")
-    public ResponseEntity<?> likes(@PathVariable(name = "id") Long id, @RequestParam(name = "likes") int likes) {
-        Article article = articleService.saveCurrentLikes(id, likes);
-        return article == null
+    @GetMapping("/posts/tags")
+    public ResponseEntity<Page<Article>> getArticlesByTags(HttpServletRequest request,
+            @PageableDefault(sort = {"views"}, direction = Sort.Direction.DESC) Pageable pageable)
+    {
+        String[] tags = request.getParameterValues("tag");
+        Page<Article> page = articleService.articlesByTags(tags, pageable);
+        return page.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(HttpStatus.OK);
+                : new ResponseEntity<>(page, HttpStatus.OK);
     }
 
     @PostMapping(path = "/posts" , consumes = MediaType.APPLICATION_JSON_VALUE)

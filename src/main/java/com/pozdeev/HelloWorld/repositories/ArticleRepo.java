@@ -7,10 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
-import java.util.Optional;
-
-
 @Repository
 public interface ArticleRepo extends CrudRepository<Article, Long> {
 
@@ -18,15 +14,36 @@ public interface ArticleRepo extends CrudRepository<Article, Long> {
 
     Page<Article> findByAnonsContaining(String str, Pageable pageable);
 
-    int countAllByAuthor(Long id);
-
-    @Query(value = "SELECT a.article_id, a.title, a.anons, a.full_text, a.user_id, a.created_date_time, a.likes, a.reposts, a.views" +
-            " FROM articles a INNER JOIN article_tags at ON a.article_id=at.article_id INNER JOIN tags t ON t.id=at.tag_id " +
-            "WHERE t.name = ?1",
-            countQuery = "SELECT COUNT(a.article_id) FROM articles a INNER JOIN article_tags at ON a.article_id=at.article_id" +
-                    " INNER JOIN tags t ON t.id=at.tag_id WHERE t.name = ?1",
+    @Query(value = "SELECT a.article_id, a.title, a.anons, a.full_text, a.user_id, a.created_date_time, a.views" +
+            "FROM articles a \n" +
+            "INNER JOIN articles_tags at ON a.article_id=at.article_id \n" +
+            "INNER JOIN tags t ON t.id=at.tag_id \n" +
+            "WHERE t.name IN (:tags)" +
+            "GROUP BY a.article_id\n" +
+            "HAVING COUNT(*)>1",
+            countQuery = "SELECT COUNT(*) " +
+                    "FROM (SELECT a.article_id, a.title, a.anons, a.full_text, a.user_id, a.created_date_time, a.views" +
+                    "FROM articles a" +
+                    "INNER JOIN articles_tags at ON a.article_id=at.article_id" +
+                    "INNER JOIN tags t ON t.id=at.tag_id" +
+                    "WHERE t.name IN (:tags)" +
+                    "GROUP BY a.article_id" +
+                    "HAVING COUNT(*)>1)",
             nativeQuery = true)
-    Page<Article> findByTag(Collection<String> tags, Pageable pageable);
+    Page<Article> findByTags(String[] tags, Pageable pageable);
+
+    @Query(value = "SELECT a.article_id, a.title, a.anons, a.full_text, a.user_id, a.created_date_time, a.views" +
+            "FROM articles a \n" +
+            "INNER JOIN articles_tags at ON a.article_id=at.article_id \n" +
+            "INNER JOIN tags t ON t.id=at.tag_id \n" +
+            "WHERE t.name=(:tag)",
+            countQuery = "SELECT COUNT(*)" +
+                    "FROM articles a" +
+                    "INNER JOIN articles_tags at ON a.article_id=at.article_id" +
+                    "INNER JOIN tags t ON t.id=at.tag_id" +
+                    "WHERE t.name=(:tag)",
+            nativeQuery = true)
+    Page<Article> findByTag(String tag, Pageable pageable);
 
 
 }

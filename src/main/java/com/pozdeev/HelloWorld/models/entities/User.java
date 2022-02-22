@@ -1,14 +1,13 @@
 package com.pozdeev.HelloWorld.models.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.pozdeev.HelloWorld.models.entities.Article;
-import com.pozdeev.HelloWorld.models.entities.Comment;
 import com.pozdeev.HelloWorld.models.security.Role;
 import com.pozdeev.HelloWorld.models.security.Status;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -36,7 +35,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Status status = Status.ACTIVE;
 
-    @Column(name = "created_date_time", updatable = false)
+    @Column(name = "created_date_time", nullable = false, updatable = false)
     private LocalDateTime created;
 
     @JsonIgnore
@@ -47,24 +46,17 @@ public class User {
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Like> likes;
+
     public User() { }
 
-    public User(Long userId, String name, String email, String password, Role role, Status status, LocalDateTime created) {
+    public User(Long userId, String name, String email, String password) {
         this.userId = userId;
         this.name = name;
         this.email = email;
         this.password = password;
-        this.role = role;
-        this.status = status;
-        this.created = created;
-    }
-
-    public User(Long userId, String name, String email, String password, LocalDateTime created) {
-        this.userId = userId;
-        this.name = name;
-        this.email = email;
-        this.password = password;
-        this.created = created;
     }
 
     public Long getUserId() {
@@ -137,6 +129,14 @@ public class User {
 
     public void setComments(List<Comment> comments) {
         this.comments = comments;
+    }
+
+    public List<Like> getLikes() {
+        return likes;
+    }
+
+    public void setLikes(List<Like> likes) {
+        this.likes = likes;
     }
 
     @Override

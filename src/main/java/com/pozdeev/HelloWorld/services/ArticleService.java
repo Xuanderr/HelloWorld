@@ -2,13 +2,15 @@ package com.pozdeev.HelloWorld.services;
 
 import com.pozdeev.HelloWorld.models.entities.Article;
 import com.pozdeev.HelloWorld.repositories.ArticleRepo;
+import com.pozdeev.HelloWorld.repositories.TagRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
+
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -39,14 +41,11 @@ public class ArticleService {
         if(updArticle.isEmpty()) {
             return null;
         }
-        updArticle.get().setLikes(likes);
         return articleRepo.save(updArticle.get());
     }
 
     public Article createNewArticle(Article newArticle) {
         newArticle.setCreated(LocalDateTime.now());
-        newArticle.setLikes(0);
-        newArticle.setReposts(0);
         newArticle.setViews(0);
         return articleRepo.save(newArticle);
     }
@@ -74,13 +73,12 @@ public class ArticleService {
         return articleRepo.findByAnonsContaining(str, pageable);
     }
 
-    //сейчас не используется
-    public int getArticlesAmountForUser(Long userId) {
-        return articleRepo.countAllByAuthor(userId);
+
+    public Page<Article> articlesByTags(String[] tags, Pageable pageable) {
+        if (tags.length == 1) {
+            return articleRepo.findByTag(tags[0], pageable);
+        }
+        return articleRepo.findByTags(tags, pageable);
     }
 
-    //сейчас не используется
-    public Page<Article> getArticlesForTag(Collection<String> tags, Pageable pageable) {
-        return articleRepo.findByTag(tags, pageable);
-    }
 }
