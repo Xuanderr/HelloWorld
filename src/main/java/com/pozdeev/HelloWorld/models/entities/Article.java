@@ -2,6 +2,9 @@ package com.pozdeev.HelloWorld.models.entities;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.pozdeev.HelloWorld.models.entities.user.SmallUser;
+import com.pozdeev.HelloWorld.models.entities.user.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -12,24 +15,30 @@ import java.util.Set;
 @Table(name = "articles")
 public class Article {
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "article_id")
     private Long articleId;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Column(name = "title", nullable = false)
     private String title;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Column(name = "anons", nullable = false)
     private String anons;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Column(name = "full_text", nullable = false)
     private String fullText;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @ManyToOne()
     @JoinColumn(name = "user_id", nullable = false)
     private User author;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Column(name = "created_date_time", nullable = false)
     private LocalDateTime created;
 
@@ -47,27 +56,31 @@ public class Article {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "articles_tags",
             joinColumns = {@JoinColumn(name = "article_id", referencedColumnName = "article_id")},
-            inverseJoinColumns = {@JoinColumn(name = "tag_id", referencedColumnName = "id")})
+            inverseJoinColumns = {@JoinColumn(name = "tag_name", referencedColumnName = "name")})
     private Set<Tag> tags;
+
+    @Transient
+    private int likeAmount;
 
     public Article() {  }
 
-    public Article(Long articleId, String title, String anons, String fullText, User author) {
+    public Article(Long articleId) {
         this.articleId = articleId;
-        this.title = title;
-        this.anons = anons;
-        this.fullText = fullText;
-        this.author = author;
     }
 
-    public Article(Long articleId, String title, String anons, String fullText, User author, LocalDateTime created, int views) {
-        this.articleId = articleId;
+    public Article(String title, String anons, String fullText) {
+        this.title = title;
+        this.anons = anons;
+        this.fullText = fullText;
+    }
+
+    public Article(String title, String anons, String fullText, User author) {
         this.title = title;
         this.anons = anons;
         this.fullText = fullText;
         this.author = author;
-        this.created = created;
-        this.views = views;
+        this.created = LocalDateTime.now();
+        this.views = 0;
     }
 
     public Long getArticleId() {
@@ -150,8 +163,20 @@ public class Article {
         this.likes = likes;
     }
 
+    public int getLikeAmount() {
+        return likeAmount;
+    }
+
+    public void setLikeAmount(int likeAmount) {
+        this.likeAmount = likeAmount;
+    }
+
     public void viewsIncrement() {
         this.views += 1;
+    }
+
+    public void prepareToResponse() {
+        this.author =  new SmallUser(this.author.getName());
     }
 
     @Override

@@ -1,12 +1,20 @@
 package com.pozdeev.HelloWorld.models.system_entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class UserProperties {
 
+    @JsonIgnore
     private String email;
     private String role;
     private String status;
 
     public UserProperties() { }
+
+    public UserProperties(String role, String status) {
+        this.role = role;
+        this.status = status;
+    }
 
     public UserProperties(String email, String role, String status) {
         this.email = email;

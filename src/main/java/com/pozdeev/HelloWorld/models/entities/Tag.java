@@ -8,11 +8,7 @@ import java.util.Set;
 public class Tag {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long Id;
-
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     private String name;
 
     @ManyToMany(mappedBy = "tags")
@@ -20,17 +16,8 @@ public class Tag {
 
     public Tag() { }
 
-    public Tag(Long id, String name) {
-        this.Id = id;
+    public Tag(String name) {
         this.name = name;
-    }
-
-    public Long getId() {
-        return Id;
-    }
-
-    public void setId(Long id) {
-        Id = id;
     }
 
     public String getName() {
@@ -44,8 +31,7 @@ public class Tag {
     @Override
     public String toString() {
         return "Tag{" +
-                "Id=" + Id +
-                ", name='" + name + '\'' +
+                " name='" + name + '\'' +
                 '}';
     }
 }

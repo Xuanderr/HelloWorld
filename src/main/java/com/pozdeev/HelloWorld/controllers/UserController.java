@@ -1,16 +1,19 @@
 package com.pozdeev.HelloWorld.controllers;
 
 
-import com.pozdeev.HelloWorld.models.entities.User;
+import com.pozdeev.HelloWorld.models.entities.user.User;
 import com.pozdeev.HelloWorld.models.system_entities.UserProperties;
 import com.pozdeev.HelloWorld.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -23,52 +26,52 @@ public class UserController {
         this.userService = blogService;
     }
 
-    @GetMapping("/users")
-    public ResponseEntity<List<User>> getAll() {
-        List<User> users = userService.allUsers();
-        return users.isEmpty()
+    @GetMapping("/api/v1/blog/users")
+    public ResponseEntity<Page<User>> getAll(
+            @PageableDefault(sort = {"name"}, direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<User> users = userService.allUsers(pageable);
+        return !users.hasContent()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
                 : new ResponseEntity<>(users, HttpStatus.OK);
     }
 
-    @GetMapping("/users/{id}")
-    public ResponseEntity<User> getOneUserByID(@PathVariable(name = "id", required = false) Long id) {
+    @GetMapping("/api/v1/blog/user/{id}")
+    public ResponseEntity<User> getUserByID(@PathVariable(name = "id", required = false) Long id) {
         Optional<User> user = userService.oneUser(id);
         return user.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
                 : new ResponseEntity<>(user.get(), HttpStatus.OK);
     }
 
-    @PostMapping(path = "/users" , consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<User> create(@RequestBody User newUser) {
-        User user = userService.createNewUser(newUser);
-        return user.getUserId() == null
+    @PostMapping(path = "/api/v1/blog/user" , consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<User> createUser(@RequestBody User newUser) {
+        Optional<User> user = userService.createNewUser(newUser);
+        return user.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(user, HttpStatus.OK);
+                : new ResponseEntity<>(user.get(), HttpStatus.OK);
     }
 
-    //authenticated users
-    @PutMapping(path = "/users", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<User> update(@RequestBody User user) {
-        User updUser = userService.updateUser(user);
-        return updUser == null
+    @PutMapping(path = "/api/v1/blog/user/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<User> updateUser(@PathVariable(name = "id") Long id, @RequestBody User user) {
+        user.setUserId(id);
+        Optional<User> updUser = userService.updateUser(user);
+        return updUser.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(updUser, HttpStatus.OK);
+                : new ResponseEntity<>(updUser.get(), HttpStatus.OK);
     }
 
-    @PutMapping(path = "/users/properties", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> updateProperties(@RequestBody UserProperties userProperties) {
-        User updUser = userService.updateUserProperties(userProperties);
-        return updUser == null
+    @PutMapping(path = "/api/v1/blog/user/properties", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> updateUserProperties(@RequestBody UserProperties user) {
+        boolean updUserProperties = userService.updateUserProperties(user);
+        return !updUserProperties
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
                 : new ResponseEntity<>(HttpStatus.OK);
     }
 
-    //authenticated users
-    @DeleteMapping("/users/{id}")
-    public ResponseEntity<?> delete(@PathVariable(name = "id", required = false) Long id) {
-        boolean del = userService.deleteUserById(id);
-        return del
+    @DeleteMapping("/api/v1/blog/user/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable(name = "id") Long id) {
+        boolean delUser = userService.deleteUserById(id);
+        return delUser
                 ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }

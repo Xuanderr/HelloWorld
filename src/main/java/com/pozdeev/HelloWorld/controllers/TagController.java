@@ -1,9 +1,6 @@
 package com.pozdeev.HelloWorld.controllers;
 
-import com.pozdeev.HelloWorld.models.entities.Article;
 import com.pozdeev.HelloWorld.models.entities.Tag;
-import com.pozdeev.HelloWorld.models.entities.User;
-import com.pozdeev.HelloWorld.models.system_entities.UserProperties;
 import com.pozdeev.HelloWorld.services.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
+
 @RestController
 public class TagController {
 
@@ -27,8 +25,7 @@ public class TagController {
         this.tagService = tagService;
     }
 
-    //permit all
-    @GetMapping("/tags")
+    @GetMapping("/api/v1/blog/tags")
     public ResponseEntity<Page<Tag>> getAll(
             @PageableDefault(sort = {"name"}, direction = Sort.Direction.ASC) Pageable pageable)
     {
@@ -39,30 +36,27 @@ public class TagController {
     }
 
 
-    //admin
-    @PostMapping(path = "/tags" , consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Tag> create(@RequestBody Tag newTag) {
-        Tag tag = tagService.createNewTag(newTag);
-        return tag.getId() == null
+    @PostMapping(path = "/api/v1/blog/tag" , consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Tag> createTag(@RequestBody Tag newTag) {
+        Optional<Tag> tag = tagService.createNewTag(newTag);
+        return tag.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(tag, HttpStatus.OK);
+                : new ResponseEntity<>(tag.get(), HttpStatus.OK);
     }
 
-    //admin
-    @PutMapping(path = "/tags", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Tag> update(@RequestBody Tag tag) {
-        Tag updTag = tagService.updateTag(tag);
-        return updTag == null
+    @PutMapping(path = "/api/v1/blog/tag/{name}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Tag> updateTag(@PathVariable(name = "name") String name, @RequestBody Tag tag) {
+        Optional<Tag> updTag = tagService.updateTagByName(name, tag);
+        return updTag.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(updTag, HttpStatus.OK);
+                : new ResponseEntity<>(updTag.get(), HttpStatus.OK);
     }
 
-    //admin
-    @DeleteMapping("/tags/{id}")
-    public ResponseEntity<?> delete(@PathVariable(name = "id") Long id) {
-        boolean del = tagService.deleteTagById(id);
-        return del
-                ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
-                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    @DeleteMapping("/api/v1/blog/tags/{name}")
+    public ResponseEntity<?> deleteTag(@PathVariable(name = "name") String name) {
+        boolean delTag = tagService.deleteTagByName(name);
+        return !delTag
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

@@ -9,14 +9,12 @@ import java.util.Set;
 
 public class JwtUserAuthenticationToken implements Authentication {
 
-    private final String username;
-    private final String role;
+    private final Long userId;
     private final Set<SimpleGrantedAuthority> authorities;
     private boolean isAuthenticated;
 
-    public JwtUserAuthenticationToken(String username, String role, Set<SimpleGrantedAuthority> authorities) {
-        this.username = username;
-        this.role = role;
+    public JwtUserAuthenticationToken(Long userId, Set<SimpleGrantedAuthority> authorities) {
+        this.userId = userId;
         this.authorities = authorities;
     }
 
@@ -36,8 +34,8 @@ public class JwtUserAuthenticationToken implements Authentication {
     }
 
     @Override
-    public String getPrincipal() {
-        return username;
+    public Long getPrincipal() {
+        return userId;
     }
 
     @Override
@@ -50,9 +48,9 @@ public class JwtUserAuthenticationToken implements Authentication {
         this.isAuthenticated = isAuthenticated;
     }
 
+
     @Override
     public String getName() {
-        return role;
+        return null;
     }
-
 }

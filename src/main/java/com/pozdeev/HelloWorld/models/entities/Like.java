@@ -1,5 +1,7 @@
 package com.pozdeev.HelloWorld.models.entities;
 
+import com.pozdeev.HelloWorld.models.entities.user.User;
+
 import javax.persistence.*;
 
 @Entity
@@ -19,12 +21,15 @@ public class Like {
     @JoinColumn(name = "article_id", nullable = false)
     private Article article;
 
+    @Transient
+    private Integer likesAmount;
+
     public Like() { }
 
-    public Like(Long likeId, User user, Article article) {
-        this.likeId = likeId;
+    public Like(User user, Article article, Integer likesAmount) {
         this.user = user;
         this.article = article;
+        this.likesAmount = likesAmount;
     }
 
     public Long getLikeId() {
@@ -49,5 +54,13 @@ public class Like {
 
     public void setArticle(Article article) {
         this.article = article;
+    }
+
+    public Integer getLikesAmount() {
+        return likesAmount;
+    }
+
+    public void setLikesAmount(Integer likesAmount) {
+        this.likesAmount = likesAmount;
     }
 }

@@ -1,13 +1,16 @@
-package com.pozdeev.HelloWorld.models.entities;
+package com.pozdeev.HelloWorld.models.entities.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.pozdeev.HelloWorld.models.entities.Article;
+import com.pozdeev.HelloWorld.models.entities.Comment;
+import com.pozdeev.HelloWorld.models.entities.Like;
 import com.pozdeev.HelloWorld.models.security.Role;
 import com.pozdeev.HelloWorld.models.security.Status;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -52,8 +55,13 @@ public class User {
 
     public User() { }
 
-    public User(Long userId, String name, String email, String password) {
+    public User(Long userId) {
         this.userId = userId;
+        this.role = null;
+        this.status = null;
+    }
+
+    public User(String name, String email, String password) {
         this.name = name;
         this.email = email;
         this.password = password;

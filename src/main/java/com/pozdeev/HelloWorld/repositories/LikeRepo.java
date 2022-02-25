@@ -2,7 +2,7 @@ package com.pozdeev.HelloWorld.repositories;
 
 import com.pozdeev.HelloWorld.models.entities.Article;
 import com.pozdeev.HelloWorld.models.entities.Like;
-import com.pozdeev.HelloWorld.models.entities.User;
+import com.pozdeev.HelloWorld.models.entities.user.User;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

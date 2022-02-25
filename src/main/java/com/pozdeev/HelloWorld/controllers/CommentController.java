@@ -12,6 +12,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 
 @RestController
 public class CommentController {
@@ -23,34 +25,34 @@ public class CommentController {
         this.commentService = commentService;
     }
 
-    @GetMapping("/comments/{id}")
-    public ResponseEntity<Page<Comment>> getAllByArticle(
+    @GetMapping("/api/v1/blog/comments/{id}")
+    public ResponseEntity<Page<Comment>> getAllByArticle(@PathVariable(name = "id") Long id,
             @PageableDefault(sort = {"created"}, direction = Sort.Direction.DESC) Pageable pageable)
     {
-        Page<Comment> page = commentService.allComments(pageable);
-        return page.isEmpty()
+        Page<Comment> page = commentService.commentsByArticle(id, pageable);
+        return !page.hasContent()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
                 : new ResponseEntity<>(page, HttpStatus.OK);
     }
 
-    @PostMapping(path = "/comments" , consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Comment> create(@RequestBody Comment newComment) {
-        Comment comment = commentService.createNewComment(newComment);
-        return comment.getCommentId() == null
+    @PostMapping(path = "/api/v1/blog/comment" , consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Comment> createComment(@RequestBody Comment newComment) {
+        Optional<Comment> comment = commentService.createNewComment(newComment);
+        return comment.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(comment, HttpStatus.OK);
+                : new ResponseEntity<>(comment.get(), HttpStatus.OK);
     }
 
-    @PutMapping(path = "/comments", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Comment> update(@RequestBody Comment comment) {
-        Comment updComment = commentService.updateComment(comment);
-        return updComment == null
+    @PutMapping(path = "/api/v1/blog/comment/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Comment> updateComment(@PathVariable(name = "id") Long id, @RequestBody Comment comment) {
+        Optional<Comment> updComment = commentService.updateComment(id, comment);
+        return updComment.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(updComment, HttpStatus.OK);
+                : new ResponseEntity<>(updComment.get(), HttpStatus.OK);
     }
 
-    @DeleteMapping("/comments/{id}")
-    public ResponseEntity<?> delete(@PathVariable(name = "id") Long id) {
+    @DeleteMapping("/api/v1/blog/comment/{id}")
+    public ResponseEntity<?> deleteComment(@PathVariable(name = "id") Long id) {
         boolean del = commentService.deleteCommentById(id);
         return del
                 ? new ResponseEntity<>(HttpStatus.NO_CONTENT)

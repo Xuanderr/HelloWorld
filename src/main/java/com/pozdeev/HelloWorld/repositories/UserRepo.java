@@ -1,6 +1,8 @@
 package com.pozdeev.HelloWorld.repositories;
 
-import com.pozdeev.HelloWorld.models.entities.User;
+import com.pozdeev.HelloWorld.models.entities.user.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,5 +14,5 @@ public interface UserRepo extends CrudRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
-    List<User> findAllByOrderByUserIdAsc();
+    Page<User> findAll(Pageable pageable);
 }

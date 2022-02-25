@@ -1,5 +1,6 @@
 package com.pozdeev.HelloWorld.security;
 
+import com.pozdeev.HelloWorld.cache.TokenCache;
 import com.pozdeev.HelloWorld.exception.BlackListException;
 import com.pozdeev.HelloWorld.exception.MismatchRefreshTokenException;
 import com.pozdeev.HelloWorld.models.security.Permission;
@@ -8,7 +9,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -34,19 +34,10 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(JwtTokenPersistenceFilter.class.getName());
     private final static String AUTHENTICATION_SCHEME_JWT_TOKEN = "Bearer";
-    //private final static  String AUTHENTICATION_SCHEME_JWT_REFRESH_TOKEN = "Bearer";
     private final static String HTTP_HEADER_REFRESH = "Refresh";
 
-    private final JwtTokenProvider jwtTokenProvider;
-    private final TokenCache tokenCache;
-    private boolean refreshFlag;
 
-    @Autowired
-    public JwtTokenPersistenceFilter(JwtTokenProvider jwtTokenProvider, TokenCache tokenCache)
-    {
-        this.tokenCache = tokenCache;
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
+    private boolean refreshFlag;
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
@@ -68,19 +59,27 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
                 injectAuthenticationIntoContext(authentication);
             }
             filterChain.doFilter(servletRequest, servletResponse);
-            return;
 
         } catch (BadCredentialsException e) {
-            LOGGER.debug("IN doFilter(): BadCredentialsException", e);
+            LOGGER.info("IN JwtTokenPersistenceFilter.doFilter(): BadCredentialsException", e);
+            ((HttpServletResponse) servletResponse)
+                    .sendError(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
+
         } catch (JwtException e) {
-            LOGGER.info("IN doFilter(): wrong token structure");
+            LOGGER.info("IN JwtTokenPersistenceFilter.doFilter(): wrong token structure", e.getCause());
+            ((HttpServletResponse) servletResponse)
+                    .sendError(HttpStatus.UNAUTHORIZED.value(), "Wrong token structure");
+
         } catch (BlackListException e) {
-            LOGGER.debug("IN doFilter(): BlackListException", e);
+            LOGGER.info("IN JwtTokenPersistenceFilter.doFilter(): BlackListException", e);
+            ((HttpServletResponse) servletResponse)
+                    .sendError(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
+
         } catch (MismatchRefreshTokenException e) {
-            LOGGER.debug("IN doFilter(): MismatchRefreshTokenException", e);
+            LOGGER.info("IN JwtTokenPersistenceFilter.doFilter(): MismatchRefreshTokenException", e);
+            ((HttpServletResponse) servletResponse)
+                    .sendError(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
         }
-        ((HttpServletResponse) servletResponse)
-                .sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase());
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
@@ -93,10 +92,13 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
     private String getAccessTokenFromRequest(HttpServletRequest request) {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (header == null) {
+            LOGGER.debug("IN JwtTokenPersistenceFilter.getAccessTokenFromRequest(): Header Authorization is empty");
             return null;
         }
         header = header.trim();
         if (!StringUtils.startsWithIgnoreCase(header, AUTHENTICATION_SCHEME_JWT_TOKEN)) {
+            LOGGER.debug(
+                    "IN JwtTokenPersistenceFilter.getAccessTokenFromRequest(): Mismatch with AUTHENTICATION_SCHEME_JWT_TOKEN");
             return null;
         }
         if (header.equalsIgnoreCase(AUTHENTICATION_SCHEME_JWT_TOKEN)) {
@@ -108,10 +110,13 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
     private String getRefreshTokenFromRequest(HttpServletRequest request) {
         String header = request.getHeader(HTTP_HEADER_REFRESH);
         if (header == null) {
+            LOGGER.debug("IN JwtTokenPersistenceFilter.getAccessTokenFromRequest(): Header Refresh is empty");
             return null;
         }
         header = header.trim();
         if (!StringUtils.startsWithIgnoreCase(header, AUTHENTICATION_SCHEME_JWT_TOKEN)) {
+            LOGGER.debug(
+                    "IN JwtTokenPersistenceFilter.getRefreshTokenFromRequest(): Mismatch with AUTHENTICATION_SCHEME_JWT_TOKEN");
             return null;
         }
         if (header.equalsIgnoreCase(AUTHENTICATION_SCHEME_JWT_TOKEN)) {
@@ -133,23 +138,22 @@ public class JwtTokenPersistenceFilter extends GenericFilterBean {
     }
 
     private Authentication getAuthenticationFromAccessToken(String token) throws JwtException, BlackListException {
-        if(tokenCache.blackListContains(token)) {
-            throw new BlackListException("Access deny because provide AccessToken in BlackList");
+        if(TokenCache.blackListContains(token)) {
+            throw new BlackListException("AccessToken in BlackList");
         }
-        Claims accessClaims = jwtTokenProvider.getAccessClaims(token);
-        String email = accessClaims.getSubject();
+        Claims accessClaims = JwtTokenProvider.getAccessClaims(token);
+        String id = accessClaims.getSubject();
         String role = accessClaims.get("role", String.class);
 
-        return new JwtUserAuthenticationToken(email, role, Role.valueOf(role).getAuthorities());
+        return new JwtUserAuthenticationToken(Long.valueOf(id), Role.valueOf(role).getAuthorities());
     }
 
     private Authentication getAuthenticationFromRefreshToken(String token) throws JwtException, MismatchRefreshTokenException{
-        Claims accessClaims = jwtTokenProvider.getRefreshClaims(token);
-        String email = accessClaims.getSubject();
-        if (!tokenCache.validateRefreshToken(email, token)) {
-            throw new MismatchRefreshTokenException("Access deny because provide RefreshToken is not found in memory");
+        Long id = Long.valueOf(JwtTokenProvider.getRefreshClaims(token).getSubject());
+        if (!TokenCache.validateRefreshToken(id, token)) {
+            throw new MismatchRefreshTokenException("RefreshToken is not found in storage");
         }
-        return new JwtUserAuthenticationToken(email, "",
+        return new JwtUserAuthenticationToken(id,
                 Set.of(new SimpleGrantedAuthority(Permission.TOKEN_REFRESH.getPermission())));
     }
 

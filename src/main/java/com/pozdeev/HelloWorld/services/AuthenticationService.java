@@ -1,24 +1,20 @@
 package com.pozdeev.HelloWorld.services;
 
-import com.pozdeev.HelloWorld.models.entities.User;
+import com.pozdeev.HelloWorld.models.entities.user.User;
 import com.pozdeev.HelloWorld.models.system_entities.AuthenticationRequest;
 import com.pozdeev.HelloWorld.models.system_entities.AuthenticationResponse;
 import com.pozdeev.HelloWorld.models.system_entities.LoginResponse;
-import com.pozdeev.HelloWorld.models.security.Role;
 import com.pozdeev.HelloWorld.security.JwtTokenProvider;
-import com.pozdeev.HelloWorld.security.TokenCache;
+import com.pozdeev.HelloWorld.cache.TokenCache;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class AuthenticationService {
@@ -26,60 +22,59 @@ public class AuthenticationService {
     private final static Logger LOGGER = LoggerFactory.getLogger(AuthenticationService.class.getName());
 
     private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final TokenCache tokenCache;
 
-    private Role role;
     private User user;
-
-    protected void setRole(Role role) {
-        this.role = role;
-    }
 
     protected void setUser(User user) {
         this.user = user;
     }
 
     @Autowired
-    public AuthenticationService(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider, TokenCache tokenCache) {
+    public AuthenticationService(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.tokenCache = tokenCache;
     }
 
     public boolean login(AuthenticationRequest request, LoginResponse loginResponse) {
         try {
-            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-            String accessToken = jwtTokenProvider.generateAccessToken(auth.getName(), role.name());
-            String refreshToken = tokenCache.refreshTokenFromCache(auth.getName());
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+            String accessToken = JwtTokenProvider.generateAccessToken(user.getUserId(), user.getRole().name());
+            String refreshToken = TokenCache.refreshTokenFromStorage(user.getUserId());
             if(refreshToken == null) {
-                refreshToken = jwtTokenProvider.generateRefreshToken(auth.getName());
-                tokenCache.addToRefreshStorage(auth.getName(), refreshToken);
+                refreshToken = JwtTokenProvider.generateRefreshToken(user.getUserId(), user.getRole().name());
+                if(refreshToken == null) {
+
+                }
+                TokenCache.addToRefreshStorage(user.getUserId(), refreshToken);
             }
             loginResponse.setAccessToken(accessToken);
             loginResponse.setRefreshToken(refreshToken);
             loginResponse.setUser(user);
             return true;
-        } catch (AuthenticationException ex) {
-            LOGGER.info("Authentication failed");
+        } catch (AuthenticationException e) {
+            LOGGER.info("IN AuthenticationService.login(): {}", e.getCause(), e);
+            return false;
         }
-        return false;
     }
 
     public AuthenticationResponse refresh(String refreshToken) {
         try {
-            String email = jwtTokenProvider.getRefreshClaims(refreshToken).getSubject();
-            if (!tokenCache.validateRefreshToken(email, refreshToken)) {
+            Claims refreshClaims = JwtTokenProvider.getRefreshClaims(refreshToken);
+            Long id = Long.valueOf(refreshClaims.getSubject());
+            String role = refreshClaims.get("role", String.class);
+            if (!TokenCache.validateRefreshToken(id, refreshToken)) {
                 return null;
             }
-            String newAccessToken = jwtTokenProvider.generateAccessToken(email, role.name());
-            String newRefreshToken = jwtTokenProvider.generateRefreshToken(email);
-            tokenCache.addToRefreshStorage(email, newRefreshToken);
+            String newAccessToken = JwtTokenProvider.generateAccessToken(id, role);
+            String newRefreshToken = JwtTokenProvider.generateRefreshToken(id, role);
+            if(refreshToken == null) {
+
+            }
+            TokenCache.addToRefreshStorage(id, newRefreshToken);
             return new AuthenticationResponse(newAccessToken, newRefreshToken);
-        } catch (JwtException ex) {
-            LOGGER.info("Authentication failed");
+        } catch (JwtException e) {
+            LOGGER.info("IN AuthenticationService.refresh(): Authentication failed - Invalid RefreshToken Structure", e.getCause());
+            return null;
         }
-        return null;
     }
 
 }

@@ -1,6 +1,6 @@
 package com.pozdeev.HelloWorld.models.system_entities;
 
-import com.pozdeev.HelloWorld.models.entities.User;
+import com.pozdeev.HelloWorld.models.entities.user.User;
 
 public class LoginResponse {
 

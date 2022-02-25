@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Optional;
 
 @RestController
 public class ArticleController {
@@ -25,68 +26,68 @@ public class ArticleController {
         this.articleService = articleService;
     }
 
-    @GetMapping("/posts")
+    @GetMapping("/api/v1/blog/posts")
     public ResponseEntity<Page<Article>> getAll(
             @PageableDefault(sort = {"views"}, direction = Sort.Direction.DESC) Pageable pageable)
     {
         Page<Article> page = articleService.allArticles(pageable);
-        return page.isEmpty()
+        return !page.hasContent()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
                 : new ResponseEntity<>(page, HttpStatus.OK);
     }
 
-    @GetMapping("/posts/{id}")
-    public ResponseEntity<Article> getOneArticleByID(@PathVariable(name = "id") Long id) {
-        Article article = articleService.oneArticle(id);
-        return article == null
+    @GetMapping("/api/v1/blog/post/{id}")
+    public ResponseEntity<Article> getArticleByID(@PathVariable(name = "id") Long id) {
+        Optional<Article> article = articleService.oneArticle(id);
+        return article.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(article, HttpStatus.OK);
+                : new ResponseEntity<>(article.get(), HttpStatus.OK);
     }
 
-    @GetMapping("/posts/str")
-    public ResponseEntity<Page<Article>> getArticleByStr(
+    @GetMapping("/api/v1/blog/posts/str")
+    public ResponseEntity<Page<Article>> getArticlesByStr(
             @PageableDefault(sort = {"views"}, direction = Sort.Direction.DESC) Pageable pageable,
             @RequestParam(name = "criteria") String criteria)
     {
-        Page<Article> page = articleService.oneArticleByStr(criteria, pageable);
-        return page.isEmpty()
+        Page<Article> page = articleService.articlesByStr(criteria, pageable);
+        return !page.hasContent()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
                 : new ResponseEntity<>(page, HttpStatus.OK);
     }
 
-    @GetMapping("/posts/tags")
+    @GetMapping("/api/v1/blog/posts/tags")
     public ResponseEntity<Page<Article>> getArticlesByTags(HttpServletRequest request,
             @PageableDefault(sort = {"views"}, direction = Sort.Direction.DESC) Pageable pageable)
     {
         String[] tags = request.getParameterValues("tag");
-        Page<Article> page = articleService.articlesByTags(tags, pageable);
-        return page.isEmpty()
+        Page<Article> page = articleService.articlesByTags(pageable, tags);
+        return !page.hasContent()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
                 : new ResponseEntity<>(page, HttpStatus.OK);
     }
 
-    @PostMapping(path = "/posts" , consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Article> create(@RequestBody Article newArticle) {
-        Article article = articleService.createNewArticle(newArticle);
-        return article.getArticleId() == null
+    @PostMapping(path = "/api/v1/blog/post" , consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Article> createArticle(@RequestBody Article newArticle) {
+        Optional<Article> article = articleService.createNewArticle(newArticle);
+        return article.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(article, HttpStatus.OK);
+                : new ResponseEntity<>(article.get(), HttpStatus.OK);
     }
 
-    @PutMapping(path = "/posts", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Article> update(@RequestBody Article article) {
-        Article updArticle = articleService.updateArticle(article);
-        return updArticle == null
+    @PutMapping(path = "/api/v1/blog/post/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Article> updateArticle(@PathVariable(name = "id") Long id, @RequestBody Article article) {
+        Optional<Article> updArticle = articleService.updateArticle(id, article);
+        return updArticle.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(updArticle, HttpStatus.OK);
+                : new ResponseEntity<>(updArticle.get(), HttpStatus.OK);
     }
 
-    @DeleteMapping("/posts/{id}")
-    public ResponseEntity<?> delete(@PathVariable(name = "id") Long id) {
+    @DeleteMapping("/api/v1/blog/post/{id}")
+    public ResponseEntity<?> deleteArticle(@PathVariable(name = "id") Long id) {
         boolean del = articleService.deleteArticleById(id);
-        return del
-                ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
-                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return !del
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 }

@@ -1,5 +1,6 @@
 package com.pozdeev.HelloWorld.security;
 
+import com.pozdeev.HelloWorld.cache.TokenCache;
 import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,62 +24,49 @@ public class JwtLogoutSuccessHandler implements LogoutSuccessHandler {
     private final static Logger LOGGER = LoggerFactory.getLogger(JwtLogoutSuccessHandler.class.getName());
 
     private final static String AUTHENTICATION_SCHEME_JWT_TOKEN = "Bearer";
-    //private static final String AUTHENTICATION_SCHEME_JWT_REFRESH_TOKEN = "Bearer";
     private final static String HTTP_HEADER_REFRESH = "Refresh";
 
-    private JwtTokenProvider jwtTokenProvider;
-    private TokenCache tokenCache;
-
     private boolean refreshFlag;
-
-    @Autowired
-    public void setMemory(TokenCache tokenCache) {
-        this.tokenCache = tokenCache;
-    }
-
-    @Autowired
-    public void setJwtTokenProvider(JwtTokenProvider jwtTokenProvider) {
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
 
     @Override
     public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         try {
             String token = getTokenFromRequest(request);
             if(token == null) {
-                LOGGER.info("IN onLogoutSuccess(): wrong request header with token");
-                response.sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase());
+                response.sendError(HttpStatus.UNAUTHORIZED.value(), "ERROR with toke header");
                 return;
             }
             if(refreshFlag) {
                 setRefreshFlag(false);
-                String subject = jwtTokenProvider.getRefreshClaims(token).getSubject();
-                if (!tokenCache.validateRefreshToken(subject, token)) {
-                    LOGGER.info("IN onLogoutSuccess(): mismatch provide token with saved token");
+                Long subject = Long.valueOf(JwtTokenProvider.getRefreshClaims(token).getSubject());
+                if (!TokenCache.validateRefreshToken(subject, token)) {
+                    LOGGER.debug("IN JwtLogoutSuccessHandler.onLogoutSuccess(): mismatch provide token with saved token");
                     response.sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase());
                     return;
                 }
-                if(!tokenCache.removeFromRefreshStorage(subject)) {
+                if(!TokenCache.removeFromRefreshStorage(subject)) {
                     LOGGER.debug("Deleting element from refreshStorage is failed");
                 }
 
             } else {
-                String subject = jwtTokenProvider.getAccessClaims(token).getSubject();
-                if(!tokenCache.addToBlackList(token)) {
-                    LOGGER.debug("Adding element to blackList is failed");
+                Long subject = Long.valueOf(JwtTokenProvider.getAccessClaims(token).getSubject());
+                if(!TokenCache.addToBlackList(token)) {
+                    LOGGER.debug("Token already in BlackList");
                 }
-                if(!tokenCache.removeFromRefreshStorage(subject)) {
-                    LOGGER.debug("Deleting element from refreshStorage is failed");
+                if(!TokenCache.removeFromRefreshStorage(subject)) {
+                    LOGGER.debug("See method HashMap.remove");
                 }
             }
             response.setStatus(HttpStatus.NO_CONTENT.value());
             response.getWriter().flush();
         } catch (BadCredentialsException e) {
-        LOGGER.debug("IN onLogoutSuccess(): BadCredentialsException", e);
+        LOGGER.info("IN JwtLogoutSuccessHandler.onLogoutSuccess(): BadCredentialsException", e);
+            response.sendError(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
+
         } catch (JwtException e) {
-        LOGGER.info("IN onLogoutSuccess(): error in token structure");
+        LOGGER.info("IN JwtLogoutSuccessHandler.onLogoutSuccess(): wrong token structure", e.getCause());
+            response.sendError(HttpStatus.UNAUTHORIZED.value(), "Wrong token structure");
         }
-        response.sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase());
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
@@ -91,10 +79,13 @@ public class JwtLogoutSuccessHandler implements LogoutSuccessHandler {
     private String getAccessTokenFromRequest(HttpServletRequest request) {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (header == null) {
+            LOGGER.debug("IN JwtLogoutSuccessHandler.getAccessTokenFromRequest(): Header Authorization is empty");
             return null;
         }
         header = header.trim();
         if (!StringUtils.startsWithIgnoreCase(header, AUTHENTICATION_SCHEME_JWT_TOKEN)) {
+            LOGGER.debug(
+                    "IN JwtLogoutSuccessHandler.getAccessTokenFromRequest(): Mismatch with AUTHENTICATION_SCHEME_JWT_TOKEN");
             return null;
         }
         if (header.equalsIgnoreCase(AUTHENTICATION_SCHEME_JWT_TOKEN)) {
@@ -106,10 +97,13 @@ public class JwtLogoutSuccessHandler implements LogoutSuccessHandler {
     private String getRefreshTokenFromRequest(HttpServletRequest request) {
         String header = request.getHeader(HTTP_HEADER_REFRESH);
         if (header == null) {
+            LOGGER.debug("IN JwtLogoutSuccessHandler.getRefreshTokenFromRequest(): Header Refresh is empty");
             return null;
         }
         header = header.trim();
         if (!StringUtils.startsWithIgnoreCase(header, AUTHENTICATION_SCHEME_JWT_TOKEN)) {
+            LOGGER.debug(
+                    "IN JwtLogoutSuccessHandler.getRefreshTokenFromRequest(): Mismatch with AUTHENTICATION_SCHEME_JWT_TOKEN");
             return null;
         }
         if (header.equalsIgnoreCase(AUTHENTICATION_SCHEME_JWT_TOKEN)) {

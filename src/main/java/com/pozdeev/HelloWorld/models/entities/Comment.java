@@ -1,6 +1,8 @@
 package com.pozdeev.HelloWorld.models.entities;
 
 
+import com.pozdeev.HelloWorld.models.entities.user.User;
+
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
@@ -14,27 +16,29 @@ public class Comment {
     private Long commentId;
 
     @ManyToOne()
-    @JoinColumn(name = "article_id", nullable = false)
+    @JoinColumn(name = "article_id")
     private Article article;
 
     @ManyToOne()
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User author;
 
-    @Column(name = "full_text", nullable = false)
+    @Column(name = "full_text")
     private String fullText;
 
-    @Column(name = "created_date_time", nullable = false, updatable = false)
+    @Column(name = "created_date_time", updatable = false)
     private LocalDateTime created;
 
     public Comment() {  }
 
-    public Comment(Long commentId, Article article, User author, String fullText, LocalDateTime created) {
-        this.commentId = commentId;
+    public Comment(String fullText) {
+        this.fullText = fullText;
+    }
+
+    public Comment(Article article, User author, String fullText) {
         this.article = article;
         this.author = author;
         this.fullText = fullText;
-        this.created =created;
     }
 
     public Long getCommentId() {

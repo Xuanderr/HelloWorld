@@ -39,10 +39,8 @@
 --
 --CREATE TABLE IF NOT EXISTS tags
 --(
---    id bigserial NOT NULL,
---    name text NOT NULL,
---    CONSTRAINT tags_pkey PRIMARY KEY (id),
---    CONSTRAINT tag_name UNIQUE (name)
+--    name text,
+--    CONSTRAINT tags_pkey PRIMARY KEY (name)
 --);
 --CREATE TABLE IF NOT EXISTS article_tag
 --(
@@ -98,13 +96,13 @@ INSERT INTO tags(name) VALUES('tag3');
 INSERT INTO tags(name) VALUES('tag4');
 INSERT INTO tags(name) VALUES('tag5');
 
-INSERT INTO article_tag(article_id, tag_id) VALUES(1, 1);
-INSERT INTO article_tag(article_id, tag_id) VALUES(1, 2);
-INSERT INTO article_tag(article_id, tag_id) VALUES(1, 3);
-INSERT INTO article_tag(article_id, tag_id) VALUES(2, 1);
-INSERT INTO article_tag(article_id, tag_id) VALUES(3, 1);
-INSERT INTO article_tag(article_id, tag_id) VALUES(4, 4);
-INSERT INTO article_tag(article_id, tag_id) VALUES(4, 5);
+INSERT INTO articles_tags(article_id, tag_name) VALUES(1, 'tag1');
+INSERT INTO articles_tags(article_id, tag_name) VALUES(1, 'tag2');
+INSERT INTO articles_tags(article_id, tag_name) VALUES(1, 'tag3');
+INSERT INTO articles_tags(article_id, tag_name) VALUES(2, 'tag1');
+INSERT INTO articles_tags(article_id, tag_name) VALUES(3, 'tag1');
+INSERT INTO articles_tags(article_id, tag_name) VALUES(4, 'tag4');
+INSERT INTO articles_tags(article_id, tag_name) VALUES(4, 'tag5');
 
 INSERT INTO likes(like_id, user_id, article_id) VALUES(1, 1, 1);
 INSERT INTO likes(like_id, user_id, article_id) VALUES(2, 1, 2);

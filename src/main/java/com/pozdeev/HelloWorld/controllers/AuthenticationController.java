@@ -22,7 +22,7 @@ public class AuthenticationController {
         this.authenticationService = authenticationService;
     }
 
-    @PostMapping("/login")
+    @PostMapping("/api/v1/blog/login")
     public ResponseEntity<LoginResponse> login(@RequestBody AuthenticationRequest authRequest) {
         LoginResponse response = new LoginResponse();
         boolean result = authenticationService.login(authRequest, response);
@@ -31,7 +31,7 @@ public class AuthenticationController {
                 : new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
-    @PostMapping("/refresh")
+    @PostMapping("/api/v1/blog/refresh")
     public ResponseEntity<AuthenticationResponse> getNewTokens(@RequestBody AuthenticatedRefreshRequest request) {
         AuthenticationResponse response = authenticationService.refresh(request.getRefreshToken());
         return response == null
