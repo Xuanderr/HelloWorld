@@ -10,13 +10,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
@@ -67,6 +65,8 @@ public class UserService {
 
     public Optional<User> createNewUser(User newUser) throws DataIntegrityViolationException {
         try {
+            newUser.setRole(Role.USER);
+            newUser.setStatus(Status.ACTIVE);
             newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
             newUser.setCreated(LocalDateTime.now());
             return Optional.of(userRepo.save(newUser));

@@ -31,16 +31,6 @@ public class Comment {
 
     public Comment() {  }
 
-    public Comment(String fullText) {
-        this.fullText = fullText;
-    }
-
-    public Comment(Article article, User author, String fullText) {
-        this.article = article;
-        this.author = author;
-        this.fullText = fullText;
-    }
-
     public Long getCommentId() {
         return commentId;
     }

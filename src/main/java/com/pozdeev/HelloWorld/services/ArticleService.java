@@ -2,20 +2,19 @@ package com.pozdeev.HelloWorld.services;
 
 import com.pozdeev.HelloWorld.cache.LikeCache;
 import com.pozdeev.HelloWorld.models.entities.Article;
+import com.pozdeev.HelloWorld.models.entities.Tag;
+import com.pozdeev.HelloWorld.models.system_entities.CreateArticleRequest;
 import com.pozdeev.HelloWorld.repositories.ArticleRepo;
-import com.pozdeev.HelloWorld.security.JwtTokenPersistenceFilter;
-import org.hibernate.JDBCException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -99,8 +98,15 @@ public class ArticleService {
         }
     }
 
-    public Optional<Article> createNewArticle(Article newArticle) throws DataIntegrityViolationException {
+    public Optional<Article> createNewArticle(CreateArticleRequest request) throws DataIntegrityViolationException {
         try {
+            Article newArticle = request.getArticle();
+            for (Tag tag: request.getTags()) {
+                newArticle.addTag(tag);
+            }
+            newArticle.setAuthor(request.getAuthor());
+            newArticle.setCreated(LocalDateTime.now());
+            newArticle.setViews(0);
             Article localArticle = articleRepo.save(newArticle);
             localArticle.prepareToResponse();
             return Optional.of(localArticle);

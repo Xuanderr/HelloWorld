@@ -2,44 +2,36 @@ package com.pozdeev.HelloWorld.models.entities;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.pozdeev.HelloWorld.models.entities.user.SmallUser;
 import com.pozdeev.HelloWorld.models.entities.user.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Table(name = "articles")
 public class Article {
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "article_id")
     private Long articleId;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Column(name = "title", nullable = false)
+    @Column(name = "title")
     private String title;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Column(name = "anons", nullable = false)
+    @Column(name = "anons")
     private String anons;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Column(name = "full_text", nullable = false)
+    @Column(name = "full_text")
     private String fullText;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     @ManyToOne()
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User author;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Column(name = "created_date_time", nullable = false)
+    @Column(name = "created_date_time")
     private LocalDateTime created;
 
     @Column(name = "views")
@@ -47,17 +39,17 @@ public class Article {
 
     @JsonIgnore
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Comment> comments;
+    private List<Comment> comments = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Like> likes;
+    private List<Like> likes = new ArrayList<>();
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE})
     @JoinTable(name = "articles_tags",
             joinColumns = {@JoinColumn(name = "article_id", referencedColumnName = "article_id")},
             inverseJoinColumns = {@JoinColumn(name = "tag_name", referencedColumnName = "name")})
-    private Set<Tag> tags;
+    private Set<Tag> tags = new HashSet<>();
 
     @Transient
     private int likeAmount;
@@ -68,19 +60,42 @@ public class Article {
         this.articleId = articleId;
     }
 
-    public Article(String title, String anons, String fullText) {
-        this.title = title;
-        this.anons = anons;
-        this.fullText = fullText;
+    // Methods of synchronized bidirectional relationships
+    public void addComment(Comment comment){
+        this.comments.add(comment);
+        comment.setArticle(this);
+    }
+    public void removeComment(Comment comment){
+        this.comments.remove(comment);
+        comment.setArticle(null);
     }
 
-    public Article(String title, String anons, String fullText, User author) {
-        this.title = title;
-        this.anons = anons;
-        this.fullText = fullText;
-        this.author = author;
-        this.created = LocalDateTime.now();
-        this.views = 0;
+    public void addLike(Like like){
+        this.likes.add(like);
+        like.setArticle(this);
+    }
+    public void removeLike(Like like){
+        this.likes.remove(like);
+        like.setArticle(null);
+    }
+
+    public void addTag(Tag tag){
+        this.tags.add(tag);
+        tag.getArticles().add(this);
+    }
+    public void removeTag(Tag tag){
+        this.tags.remove(tag);
+        tag.getArticles().remove(this);
+    }
+    //-------------------------------------
+
+
+    public void viewsIncrement() {
+        this.views += 1;
+    }
+
+    public void prepareToResponse() {
+        this.author = new SmallUser(this.author.getName(), this.author.getUserId());
     }
 
     public Long getArticleId() {
@@ -171,12 +186,17 @@ public class Article {
         this.likeAmount = likeAmount;
     }
 
-    public void viewsIncrement() {
-        this.views += 1;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Article article = (Article) o;
+        return articleId.equals(article.articleId);
     }
 
-    public void prepareToResponse() {
-        this.author =  new SmallUser(this.author.getName());
+    @Override
+    public int hashCode() {
+        return Objects.hash(articleId);
     }
 
     @Override

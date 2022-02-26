@@ -32,7 +32,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/api/v1/blog/refresh")
-    public ResponseEntity<AuthenticationResponse> getNewTokens(@RequestBody AuthenticatedRefreshRequest request) {
+    public ResponseEntity<AuthenticationResponse> refresh(@RequestBody AuthenticatedRefreshRequest request) {
         AuthenticationResponse response = authenticationService.refresh(request.getRefreshToken());
         return response == null
                 ? new ResponseEntity<>(HttpStatus.UNAUTHORIZED)

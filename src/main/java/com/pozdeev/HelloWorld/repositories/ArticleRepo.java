@@ -26,8 +26,8 @@ public interface ArticleRepo extends CrudRepository<Article, Long> {
             SELECT a.article_id, a.title, a.anons, a.full_text, a.user_id, a.created_date_time, a.views
             FROM articles a
             INNER JOIN articles_tags at ON a.article_id = at.article_id
-            INNER JOIN tags t ON at.tag_name = t.name
-            WHERE t.name IN (:tags)
+            INNER JOIN tags t ON at.tag_id = t.id
+            WHERE t.user IN (:tags)
             GROUP BY a.article_id
             HAVING COUNT(*)>1""",
             countQuery = """
@@ -35,8 +35,8 @@ public interface ArticleRepo extends CrudRepository<Article, Long> {
                     (SELECT a.article_id, a.title, a.anons, a.full_text, a.user_id, a.created_date_time, a.views
                     FROM articles a
                     INNER JOIN articles_tags at ON a.article_id = at.article_id
-                    INNER JOIN tags t ON at.tag_name = t.name
-                    WHERE t.name IN (:tags)
+                    INNER JOIN tags t ON at.tag_id = t.id
+                    WHERE t.user IN (:tags)
                     GROUP BY a.article_id
                     HAVING COUNT(*)>1)""",
             nativeQuery = true)
@@ -46,14 +46,14 @@ public interface ArticleRepo extends CrudRepository<Article, Long> {
             SELECT a.article_id, a.title, a.anons, a.full_text, a.user_id, a.created_date_time, a.views
             FROM articles a
             INNER JOIN articles_tags at ON a.article_id = at.article_id
-            INNER JOIN tags t ON at.tag_name = t.name
-            WHERE t.name = :tag""",
+            INNER JOIN tags t ON at.tag_id = t.id
+            WHERE t.user = :tag""",
             countQuery = """
                     SELECT COUNT(*)
                     FROM articles a
                     INNER JOIN articles_tags at ON a.article_id = at.article_id
-                    INNER JOIN tags t ON at.tag_name = t.name
-                    WHERE t.name = :tag""",
+                    INNER JOIN tags t ON at.tag_id = t.id
+                    WHERE t.user = :tag""",
             nativeQuery = true)
     Page<Article> findByTag(String tag, Pageable pageable);
 

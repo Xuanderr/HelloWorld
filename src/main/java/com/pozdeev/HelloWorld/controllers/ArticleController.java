@@ -2,6 +2,7 @@ package com.pozdeev.HelloWorld.controllers;
 
 
 import com.pozdeev.HelloWorld.models.entities.Article;
+import com.pozdeev.HelloWorld.models.system_entities.CreateArticleRequest;
 import com.pozdeev.HelloWorld.services.ArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -67,8 +68,8 @@ public class ArticleController {
     }
 
     @PostMapping(path = "/api/v1/blog/post" , consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Article> createArticle(@RequestBody Article newArticle) {
-        Optional<Article> article = articleService.createNewArticle(newArticle);
+    public ResponseEntity<Article> createArticle(@RequestBody CreateArticleRequest request) {
+        Optional<Article> article = articleService.createNewArticle(request);
         return article.isEmpty()
                 ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
                 : new ResponseEntity<>(article.get(), HttpStatus.OK);

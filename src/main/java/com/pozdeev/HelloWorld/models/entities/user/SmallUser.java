@@ -10,14 +10,19 @@ public class SmallUser extends User{
 
     private String name;
 
-    public SmallUser(String name) {
-        this.name = name;
+    public SmallUser(String name, Long id) {
+        if (name == null) {
+            this.name = String.valueOf(id);
+        } else {
+            this.name = name;
+        }
     }
 
     @Override
     public String getName() {
         return name;
     }
+
     @Override
     public void setName(String name) {
         this.name = name;

@@ -41,6 +41,8 @@ public class CommentService {
 
     public Optional<Comment> createNewComment(Comment newComment) throws DataIntegrityViolationException {
         try {
+            newComment.getArticle().addComment(newComment);
+            newComment.getAuthor().addComment(newComment);
             newComment.setCreated(LocalDateTime.now());
             return Optional.of(commentRepo.save(newComment));
         } catch (DataIntegrityViolationException e) {

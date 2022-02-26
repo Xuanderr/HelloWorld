@@ -14,23 +14,17 @@ public class Like {
     private Long likeId;
 
     @ManyToOne()
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
     @ManyToOne()
-    @JoinColumn(name = "article_id", nullable = false)
+    @JoinColumn(name = "article_id")
     private Article article;
 
     @Transient
     private Integer likesAmount;
 
     public Like() { }
-
-    public Like(User user, Article article, Integer likesAmount) {
-        this.user = user;
-        this.article = article;
-        this.likesAmount = likesAmount;
-    }
 
     public Long getLikeId() {
         return likeId;

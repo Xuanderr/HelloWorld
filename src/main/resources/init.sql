@@ -2,7 +2,7 @@
 --CREATE TABLE IF NOT EXISTS users
 --(
 --    user_id bigserial NOT NULL,
---    name text NOT NULL,
+--    user text NOT NULL,
 --    email text NOT NULL,
 --    password text NOT NULL,
 --    role text DEFAULT 'USER',
@@ -10,7 +10,7 @@
 --    created_date_time timestamp without time zone NOT NULL,
 --    CONSTRAINT users_pkey PRIMARY KEY (user_id),
 --    CONSTRAINT user_email UNIQUE (email),
---    CONSTRAINT user_name UNIQUE (name)
+--    CONSTRAINT user_name UNIQUE (user)
 --);
 --
 --CREATE TABLE IF NOT EXISTS articles
@@ -39,16 +39,16 @@
 --
 --CREATE TABLE IF NOT EXISTS tags
 --(
---    name text,
---    CONSTRAINT tags_pkey PRIMARY KEY (name)
+--    user text NOT NULL,
+--    CONSTRAINT tags_pkey PRIMARY KEY (id)
 --);
---CREATE TABLE IF NOT EXISTS article_tag
+--CREATE TABLE IF NOT EXISTS articles_tags
 --(
 --    article_id bigint NOT NULL,
---    tag_id bigint NOT NULL,
---    CONSTRAINT article_tags_pkey PRIMARY KEY (article_id, tag_id),
+--    tag_name bigint NOT NULL,
+--    CONSTRAINT article_tags_pkey PRIMARY KEY (article_id, tag_name),
 --    CONSTRAINT articles_fkey FOREIGN KEY (article_id) REFERENCES articles (article_id),
---    CONSTRAINT tags_fkey FOREIGN KEY (tag_id) REFERENCES tags (id)
+--    CONSTRAINT tags_fkey FOREIGN KEY (tag_name) REFERENCES tags (user)
 --);
 --CREATE TABLE IF NOT EXISTS likes
 --(
