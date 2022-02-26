@@ -1,5 +1,6 @@
 package com.pozdeev.HelloWorld.services;
 
+import com.pozdeev.HelloWorld.exception.GenerationTokenException;
 import com.pozdeev.HelloWorld.models.entities.user.User;
 import com.pozdeev.HelloWorld.models.system_entities.AuthenticationRequest;
 import com.pozdeev.HelloWorld.models.system_entities.AuthenticationResponse;
@@ -34,15 +35,16 @@ public class AuthenticationService {
         this.authenticationManager = authenticationManager;
     }
 
-    public boolean login(AuthenticationRequest request, LoginResponse loginResponse) {
+    public boolean login(AuthenticationRequest request, LoginResponse loginResponse) throws GenerationTokenException {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
             String accessToken = JwtTokenProvider.generateAccessToken(user.getUserId(), user.getRole().name());
             String refreshToken = TokenCache.refreshTokenFromStorage(user.getUserId());
             if(refreshToken == null) {
                 refreshToken = JwtTokenProvider.generateRefreshToken(user.getUserId(), user.getRole().name());
-                if(refreshToken == null) {
-
+                if(refreshToken == null | accessToken == null) {
+                    LOGGER.debug("IN AuthenticationService.login(): Generation Token ERROR");
+                    throw new GenerationTokenException("Generation Token ERROR");
                 }
                 TokenCache.addToRefreshStorage(user.getUserId(), refreshToken);
             }
@@ -51,12 +53,12 @@ public class AuthenticationService {
             loginResponse.setUser(user);
             return true;
         } catch (AuthenticationException e) {
-            LOGGER.info("IN AuthenticationService.login(): {}", e.getCause(), e);
+            LOGGER.debug("IN AuthenticationService.login(): {}", e.getCause(), e);
             return false;
         }
     }
 
-    public AuthenticationResponse refresh(String refreshToken) {
+    public AuthenticationResponse refresh(String refreshToken) throws GenerationTokenException {
         try {
             Claims refreshClaims = JwtTokenProvider.getRefreshClaims(refreshToken);
             Long id = Long.valueOf(refreshClaims.getSubject());
@@ -66,13 +68,15 @@ public class AuthenticationService {
             }
             String newAccessToken = JwtTokenProvider.generateAccessToken(id, role);
             String newRefreshToken = JwtTokenProvider.generateRefreshToken(id, role);
-            if(refreshToken == null) {
-
+            if(newRefreshToken == null | newAccessToken == null) {
+                LOGGER.debug("IN AuthenticationService.refresh(): Generation Token ERROR");
+                throw new GenerationTokenException("Generation Token ERROR");
             }
             TokenCache.addToRefreshStorage(id, newRefreshToken);
             return new AuthenticationResponse(newAccessToken, newRefreshToken);
         } catch (JwtException e) {
-            LOGGER.info("IN AuthenticationService.refresh(): Authentication failed - Invalid RefreshToken Structure", e.getCause());
+            LOGGER.info(
+                    "IN AuthenticationService.refresh(): Authentication failed - Invalid RefreshToken Structure", e.getCause());
             return null;
         }
     }

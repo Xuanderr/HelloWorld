@@ -47,19 +47,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
                 .antMatchers(HttpMethod.GET, "/api/v1/blog/posts/**", "/api/v1/blog/post/**").permitAll()
 
-                .antMatchers(HttpMethod.PUT, "/api/v1/blog/comments/**").hasAuthority(Permission.COMMENTS_UPDATE.getPermission())
                 .antMatchers(HttpMethod.GET, "/api/v1/blog/comments/**").permitAll()
+                .antMatchers(HttpMethod.PUT, "/api/v1/blog/comments/**").hasAuthority(Permission.COMMENTS_UPDATE.getPermission())
 
                 .antMatchers(HttpMethod.GET,"/api/v1/blog/users/**").hasAuthority(Permission.USERS_READ.getPermission())
                 .antMatchers(HttpMethod.PUT, "/api/v1/blog/users/properties/**").hasAuthority(Permission.USERS_PROPERTIES_UPDATE.getPermission())
                 .antMatchers(HttpMethod.POST, "/api/v1/blog/users/**").permitAll()
-                .antMatchers(HttpMethod.DELETE, "/api/v1/blog/user/**").permitAll()
+
                 .antMatchers("/api/v1/blog/users/**").hasAnyAuthority(Permission.USERS_UPDATE.getPermission(), Permission.USERS_DELETE.getPermission())
 
                 .antMatchers(HttpMethod.GET, "/api/v1/blog/tags/**").permitAll()
                 .antMatchers("/api/v1/blog/tags/**").hasAnyAuthority(Permission.TAGS_CREATE.getPermission(), Permission.TAGS_UPDATE.getPermission(), Permission.TAGS_DELETE.getPermission())
 
-                .antMatchers("/api/v1/blog/like/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .addFilterBefore(jwtTokenPersistenceFilter, UsernamePasswordAuthenticationFilter.class)

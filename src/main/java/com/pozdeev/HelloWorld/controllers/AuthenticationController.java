@@ -26,9 +26,9 @@ public class AuthenticationController {
     public ResponseEntity<LoginResponse> login(@RequestBody AuthenticationRequest authRequest) {
         LoginResponse response = new LoginResponse();
         boolean result = authenticationService.login(authRequest, response);
-        return result
-                ? new ResponseEntity<>(response, HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        return !result
+                ? new ResponseEntity<>(HttpStatus.UNAUTHORIZED)
+                : new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/api/v1/blog/refresh")

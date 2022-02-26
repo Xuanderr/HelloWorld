@@ -64,7 +64,7 @@ public class JwtTokenProvider {
     }
 
     private static Claims getClaims(String token, String secret) {
-        // Also, this method do checking of validation TokenStructure
+        // Also, this method using for validation TokenStructure
         try {
             return Jwts.parser().
                     setSigningKey(secret).parseClaimsJws(token).getBody();

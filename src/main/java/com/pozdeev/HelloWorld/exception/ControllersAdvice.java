@@ -15,6 +15,12 @@ public class ControllersAdvice {
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(GenerationTokenException.class)
+    public ResponseEntity<ExceptionResponse> handleGenerationTokenException(GenerationTokenException e) {
+        ExceptionResponse response = new ExceptionResponse(e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ExceptionResponse> handleException() {
         ExceptionResponse response = new ExceptionResponse("Усе погано!!");
